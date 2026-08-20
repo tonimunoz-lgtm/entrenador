@@ -125,6 +125,7 @@ const PHASES = [
 
 // El plan tiene una duración fija — más allá de esta semana se considera completado.
 const TOTAL_PLAN_WEEKS = PHASES[PHASES.length - 1].weeks[1];
+const RACE_WEEK = PHASES.find(p => p.raceWeek)?.raceWeek || 22;
 
 /* ---------------------------------------------------------------------
    HORARIO SEMANAL — FASE 1 y 1B (semanas 1–13)
@@ -268,7 +269,30 @@ const PHASE2_LONGRUN_BY_WEEK = {
   19: "16 km con 8 km a ritmo objetivo",
   20: "14 km con 6 km a ritmo objetivo",
   21: "12 km suaves (descarga absoluta / tapering)",
-  22: "¡Mitja Marató de Granollers! Ritmo regular 4:45–4:50 min/km · Objetivo sub 1h 43min"
+  22: "Activación suave 15–20 min + un par de progresiones cortas. Nada de kilómetros de más — mañana es la carrera."
+};
+
+// Menú del sábado antes de la carrera — carga de hidratos, nada de experimentos
+const MEALS_PRE_RACE = {
+  label: "Carga de hidratos pre-carrera",
+  zoneColor: "#FFD84D",
+  items: [
+    { meal: "Nota", text: "Hoy toca cargar hidratos, no quemarlos: sube la comida del mediodía a 100 g (en seco) de pasta o arroz. Cena ligera en hidratos de fácil digestión (arroz blanco, pasta, patata) y evita fibra o grasa en exceso — nada nuevo que pueda sentar mal mañana." },
+    { meal: "Antes de dormir", text: "Deja preparados el desayuno, el dorsal, la ropa y los geles para mañana." }
+  ]
+};
+
+// Menú específico del día de carrera (domingo, semana 22)
+const MEALS_RACE_DAY = {
+  label: "Día de carrera",
+  zoneColor: "#FFD84D",
+  items: [
+    { meal: "Desayuno (3h antes)", text: "Tostadas con miel o mermelada + un plátano + café solo. Nada nuevo ni raro — lo de siempre en tus tiradas largas." },
+    { meal: "Pre-salida (30–45 min antes)", text: "Un gel o media barrita energética + agua." },
+    { meal: "Durante la carrera", text: "Un gel cada 45 min aprox. + agua o bebida isotónica en los avituallamientos." },
+    { meal: "Justo al terminar", text: "El batido de proteína Whey Isolate + un plátano, dentro de los primeros 30 minutos." },
+    { meal: "Comida de recuperación", text: "Plato copioso con hidratos y proteína — pasta o arroz con pollo o salmón. Hoy toca disfrutar la comida sin restricción." }
+  ]
 };
 
 const WEEKLY_SCHEDULE_PHASE2_OVERRIDES = {
@@ -451,8 +475,37 @@ function getDaySchedule(weekNumber, dayKey) {
   if (phase.key === "fase2" && dayKey === "fri") {
     day.training.targetPace = "4:42";
   }
-  if (phase.key === "fase2" && dayKey === "sat") {
-    day.training.targetPace = weekNumber === 22 ? "4:47" : "4:45";
+  if (phase.key === "fase2" && dayKey === "sat" && weekNumber !== RACE_WEEK) {
+    day.training.targetPace = "4:45";
+  }
+
+  // La carrera real (Mitja Marató de Granollers) cae en domingo — nunca se hace
+  // tirada larga el día antes, así que el sábado de la semana de carrera pasa a
+  // ser un día de activación suave, y el contenido de la carrera se mueve al domingo.
+  if (weekNumber === RACE_WEEK) {
+    if (dayKey === "sat") {
+      day.typeLabel = "Activación pre-carrera";
+      day.type = "active";
+      day.training = {
+        title: "Activación suave (15–20 min)",
+        detail: "Trote muy suave + 2-3 progresiones cortas de 15-20s para activar piernas sin fatigar. Deja el dorsal, la ropa y el desayuno de mañana preparados esta noche."
+      };
+      day.isWeighDay = true;
+      day.meals = MEALS_PRE_RACE;
+    }
+    if (dayKey === "sun") {
+      day.typeLabel = "¡Carrera! Mitja Marató de Granollers";
+      day.type = "race";
+      day.isWeighDay = false;
+      day.note = null;
+      day.training = {
+        title: "Día de carrera — 21,1 km",
+        detail: "Sal controlado los primeros 3 km — con la adrenalina es fácil salir demasiado rápido. Busca tu ritmo de crucero cuanto antes y guarda algo de energía para la subida final hacia La Garriga.",
+        todayDistance: "21,1 km · Mitja Marató de Granollers",
+        targetPace: "4:47"
+      };
+      day.meals = MEALS_RACE_DAY;
+    }
   }
 
   if (phase.key === "fase3" || phase.key === "fase4") {
@@ -471,4 +524,7 @@ const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const JS_DOW_TO_KEY = { 1: "mon", 2: "tue", 3: "wed", 4: "thu", 5: "fri", 6: "sat", 0: "sun" };
 
 // Nº de días de entreno "activo" (no descanso) programados en una semana normal
-function trainingDayKeysForWeek() { return ["tue", "thu", "fri", "sat"]; }
+function trainingDayKeysForWeek(weekNumber) {
+  if (weekNumber === RACE_WEEK) return ["tue", "thu", "fri", "sun"];
+  return ["tue", "thu", "fri", "sat"];
+}
