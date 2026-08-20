@@ -39,6 +39,21 @@ function cloudPush(fn) {
   try { Promise.resolve(fn()).catch(() => {}); } catch (e) {}
 }
 
+function translateAuthError(e) {
+  const map = {
+    "auth/email-already-in-use": "Ya existe una cuenta con ese email — prueba a iniciar sesión.",
+    "auth/invalid-email": "Ese email no parece válido.",
+    "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
+    "auth/user-not-found": "No existe ninguna cuenta con ese email — crea una primero.",
+    "auth/wrong-password": "Contraseña incorrecta.",
+    "auth/invalid-credential": "Email o contraseña incorrectos.",
+    "auth/missing-password": "Escribe tu contraseña.",
+    "auth/too-many-requests": "Demasiados intentos — espera un momento y vuelve a probar."
+  };
+  console.error("Forja21 · error de autenticación:", e?.code, e?.message);
+  return map[e?.code] || e?.message || "Algo ha fallado. Inténtalo de nuevo.";
+}
+
 /* ---------------- Date helpers ---------------- */
 function pad2(n) { return String(n).padStart(2, "0"); }
 function dateKey(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
@@ -1203,7 +1218,7 @@ function renderAjustes() {
     accountHtml = `
       <div class="section-title">Cuenta y copia en la nube</div>
       <div class="card">
-        <p class="phase-summary">Aún no está configurada la sincronización con Google/Firebase. Tus datos siguen guardados solo en este dispositivo.</p>
+        <p class="phase-summary">Aún no está configurada la sincronización en la nube. Tus datos siguen guardados solo en este dispositivo.</p>
       </div>`;
   } else if (cloudUser) {
     accountHtml = `
@@ -1227,10 +1242,13 @@ function renderAjustes() {
       <div class="section-title">Cuenta y copia en la nube</div>
       <div class="card">
         <p class="phase-summary" style="margin-bottom:12px">Guarda una copia de tus datos en la nube — si pierdes el móvil o cambias de dispositivo, no pierdes tus semanas de progreso.</p>
-        <button class="btn btn-primary" id="signInBtn">
-          <svg width="16" height="16" viewBox="0 0 48 48" style="flex:none"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.2-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 15.1 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 16.3 3 9.6 7.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5.4 0 10.3-1.9 14-5.2l-6.5-5.5c-2 1.5-4.7 2.5-7.6 2.5-5.3 0-9.6-3.4-11.3-8l-6.6 5.1C9.5 40.6 16.2 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4 5.6l6.5 5.5C41.5 36 44 30.6 44 24c0-1.2-.1-2.3-.4-3.5z"/></svg>
-          Iniciar sesión con Google
-        </button>
+        <div class="field"><label>Email</label><input id="authEmail" type="email" placeholder="tu@email.com" autocomplete="email" /></div>
+        <div class="field"><label>Contraseña</label><input id="authPassword" type="password" placeholder="Mínimo 6 caracteres" autocomplete="current-password" /></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="signUpBtn">Crear cuenta</button>
+          <button class="btn btn-primary" id="signInBtn">Iniciar sesión</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="forgotPasswordBtn" style="margin-top:10px">¿Has olvidado tu contraseña?</button>
       </div>`;
   }
 
@@ -1412,8 +1430,36 @@ function renderAjustes() {
   });
 
   $("#signInBtn")?.addEventListener("click", async () => {
-    try { await CloudSync.signInWithGoogle(); }
-    catch (e) { showToast(e?.message || "No se pudo iniciar sesión"); }
+    const email = $("#authEmail").value.trim();
+    const password = $("#authPassword").value;
+    if (!email || !password) { showToast("Escribe tu email y contraseña"); return; }
+    try {
+      await CloudSync.signInWithEmail(email, password);
+    } catch (e) {
+      showToast(translateAuthError(e));
+    }
+  });
+  $("#signUpBtn")?.addEventListener("click", async () => {
+    const email = $("#authEmail").value.trim();
+    const password = $("#authPassword").value;
+    if (!email || !password) { showToast("Escribe tu email y contraseña"); return; }
+    if (password.length < 6) { showToast("La contraseña debe tener al menos 6 caracteres"); return; }
+    try {
+      await CloudSync.signUpWithEmail(email, password);
+      showToast("Cuenta creada — ya estás sincronizado");
+    } catch (e) {
+      showToast(translateAuthError(e));
+    }
+  });
+  $("#forgotPasswordBtn")?.addEventListener("click", async () => {
+    const email = $("#authEmail").value.trim();
+    if (!email) { showToast("Escribe tu email arriba primero"); return; }
+    try {
+      await CloudSync.resetPassword(email);
+      showToast("Te hemos enviado un email para restablecer la contraseña");
+    } catch (e) {
+      showToast(translateAuthError(e));
+    }
   });
   $("#signOutBtn")?.addEventListener("click", async () => {
     await CloudSync.signOutUser();
