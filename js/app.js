@@ -32,6 +32,13 @@ const state = {
   calendarCursor: new Date()  // mes que se está mirando en la vista de calendario
 };
 
+// Empuja un cambio local a Firestore si hay sesión iniciada — silencioso si no.
+// Firestore ya encola los cambios cuando no hay conexión y los sincroniza solo.
+function cloudPush(fn) {
+  if (typeof CloudSync === "undefined" || !CloudSync.enabled || !CloudSync.user) return;
+  try { Promise.resolve(fn()).catch(() => {}); } catch (e) {}
+}
+
 /* ---------------- Date helpers ---------------- */
 function pad2(n) { return String(n).padStart(2, "0"); }
 function dateKey(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
@@ -148,6 +155,7 @@ function zoneRangeText(z) {
 function saveZones(zones) {
   state.settings.zones = zones;
   storeSet(STORE_KEYS.settings, state.settings);
+  cloudPush(() => CloudSync.pushSettings(CloudSync.user.uid, state.settings));
 }
 // El plan trae los rangos de FC escritos dentro de las frases de cada entreno (ej. "Zona 2
 // (115–126 ppm)"). En vez de reescribir cada frase, sustituimos el rango por defecto por el
@@ -277,6 +285,7 @@ function saveWeight(week, weight) {
   if (idx >= 0) state.weights[idx] = entry; else state.weights.push(entry);
   state.weights.sort((a, b) => a.week - b.week);
   storeSet(STORE_KEYS.weights, state.weights);
+  cloudPush(() => CloudSync.pushWeight(CloudSync.user.uid, entry));
 }
 function weightStatus(week) {
   const target = getWeightTargetForWeek(week);
@@ -377,6 +386,7 @@ function toggleSupp(dk, id) {
   if (list.has(id)) list.delete(id); else list.add(id);
   state.supps[dk] = Array.from(list);
   storeSet(STORE_KEYS.supps, state.supps);
+  cloudPush(() => CloudSync.pushSupps(CloudSync.user.uid, dk, state.supps[dk]));
 }
 
 function renderSupplements(day, dateObj) {
@@ -512,6 +522,7 @@ function logWorkout(entry) {
   entry.id = "w" + Date.now();
   state.workouts.unshift(entry);
   storeSet(STORE_KEYS.workouts, state.workouts);
+  cloudPush(() => CloudSync.pushWorkout(CloudSync.user.uid, entry));
 }
 function workoutsForDate(dk) { return state.workouts.filter(w => w.date === dk); }
 
@@ -619,6 +630,7 @@ function renderOnboarding() {
     state.settings.startWeight = parseFloat(fd.get("startWeight")) || 87.5;
     state.settings.onboarded = true;
     storeSet(STORE_KEYS.settings, state.settings);
+    cloudPush(() => CloudSync.pushSettings(CloudSync.user.uid, state.settings));
     $("#bottomnav").style.display = "";
     state.activeTab = "hoy";
     render();
@@ -1184,7 +1196,45 @@ function renderPeso() {
 
 function renderAjustes() {
   const s = state.settings;
-  let html = `
+  const cloudUser = (typeof CloudSync !== "undefined" && CloudSync.user) || null;
+
+  let accountHtml;
+  if (typeof CloudSync === "undefined" || !CloudSync.enabled) {
+    accountHtml = `
+      <div class="section-title">Cuenta y copia en la nube</div>
+      <div class="card">
+        <p class="phase-summary">Aún no está configurada la sincronización con Google/Firebase. Tus datos siguen guardados solo en este dispositivo.</p>
+      </div>`;
+  } else if (cloudUser) {
+    accountHtml = `
+      <div class="section-title">Cuenta y copia en la nube</div>
+      <div class="card">
+        <div class="card-row">
+          <div style="display:flex; align-items:center; gap:10px">
+            ${cloudUser.photoURL ? `<img src="${cloudUser.photoURL}" alt="" style="width:36px;height:36px;border-radius:50%" />` : ""}
+            <div>
+              <div style="font-size:13.5px; font-weight:600">${cloudUser.displayName || "Sesión iniciada"}</div>
+              <div style="font-size:11.5px; color:var(--text-muted)">${cloudUser.email || ""}</div>
+            </div>
+          </div>
+          <span class="status-pill status-ontrack">☁️ Sincronizado</span>
+        </div>
+        <p class="phase-summary" style="margin-top:10px">Tus pesos, sesiones y ajustes se guardan también en la nube — si pierdes el móvil, entra con esta misma cuenta desde otro dispositivo y lo recuperas todo.</p>
+        <button class="btn btn-ghost" id="signOutBtn" style="margin-top:12px">Cerrar sesión</button>
+      </div>`;
+  } else {
+    accountHtml = `
+      <div class="section-title">Cuenta y copia en la nube</div>
+      <div class="card">
+        <p class="phase-summary" style="margin-bottom:12px">Guarda una copia de tus datos en la nube — si pierdes el móvil o cambias de dispositivo, no pierdes tus semanas de progreso.</p>
+        <button class="btn btn-primary" id="signInBtn">
+          <svg width="16" height="16" viewBox="0 0 48 48" style="flex:none"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.2-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 15.1 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 16.3 3 9.6 7.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5.4 0 10.3-1.9 14-5.2l-6.5-5.5c-2 1.5-4.7 2.5-7.6 2.5-5.3 0-9.6-3.4-11.3-8l-6.6 5.1C9.5 40.6 16.2 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4 5.6l6.5 5.5C41.5 36 44 30.6 44 24c0-1.2-.1-2.3-.4-3.5z"/></svg>
+          Iniciar sesión con Google
+        </button>
+      </div>`;
+  }
+
+  let html = accountHtml + `
     <div class="section-title">Tu perfil</div>
     <div class="card">
       <div class="field"><label>Nombre</label><input id="setName" value="${s.name}" /></div>
@@ -1298,6 +1348,7 @@ function renderAjustes() {
     }
     state.settings.startWeight = parseFloat($("#setStartWeight").value) || state.settings.startWeight;
     storeSet(STORE_KEYS.settings, state.settings);
+    cloudPush(() => CloudSync.pushSettings(CloudSync.user.uid, state.settings));
     showToast("Ajustes guardados" + (pickedRaw && pickedRaw !== state.settings.startDate ? " (ajustado al lunes de esa semana)" : ""));
     render();
   });
@@ -1326,6 +1377,7 @@ function renderAjustes() {
       if (perm === "granted") {
         state.settings.notificationsEnabled = true;
         storeSet(STORE_KEYS.settings, state.settings);
+        cloudPush(() => CloudSync.pushSettings(CloudSync.user.uid, state.settings));
         showToast("Avisos activados");
         tryRegisterPeriodicSync();
         maybeSendDailyReminder();
@@ -1336,6 +1388,7 @@ function renderAjustes() {
     } else {
       state.settings.notificationsEnabled = false;
       storeSet(STORE_KEYS.settings, state.settings);
+      cloudPush(() => CloudSync.pushSettings(CloudSync.user.uid, state.settings));
       showToast("Avisos desactivados");
     }
   });
@@ -1343,9 +1396,12 @@ function renderAjustes() {
   $("#resetData").addEventListener("click", () => {
     confirmModal(
       "¿Borrar todos tus datos?",
-      "Se borrarán tus pesos, sesiones, checklist y el perfil guardado. Esta acción no se puede deshacer.",
+      cloudUser
+        ? "Se borrarán tus pesos, sesiones, checklist y el perfil guardado, tanto en este dispositivo como en la nube. Esta acción no se puede deshacer."
+        : "Se borrarán tus pesos, sesiones, checklist y el perfil guardado. Esta acción no se puede deshacer.",
       "Sí, borrar todo",
-      () => {
+      async () => {
+        if (cloudUser) { try { await CloudSync.deleteAllCloudData(cloudUser.uid); } catch (e) {} }
         Object.values(STORE_KEYS).forEach(k => localStorage.removeItem(k));
         state.weights = []; state.workouts = []; state.supps = {};
         state.settings = { ...PROFILE_DEFAULTS, onboarded: false };
@@ -1353,6 +1409,16 @@ function renderAjustes() {
         boot();
       }
     );
+  });
+
+  $("#signInBtn")?.addEventListener("click", async () => {
+    try { await CloudSync.signInWithGoogle(); }
+    catch (e) { showToast("No se pudo iniciar sesión"); }
+  });
+  $("#signOutBtn")?.addEventListener("click", async () => {
+    await CloudSync.signOutUser();
+    showToast("Sesión cerrada — tus datos siguen en este dispositivo");
+    render();
   });
 }
 
@@ -1436,3 +1502,42 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && state.settings.onboarded) maybeSendDailyReminder();
 });
 boot();
+
+/* ---------------- Sincronización con la nube al iniciar/cerrar sesión ---------------- */
+let cloudSyncInProgress = false;
+async function handleCloudAuthChange(user) {
+  if (!user || cloudSyncInProgress) return;
+  cloudSyncInProgress = true;
+  try {
+    const cloud = await CloudSync.pullAll(user.uid);
+    const cloudHasData = cloud.settings || cloud.weights.length || cloud.workouts.length || Object.keys(cloud.supps).length;
+
+    if (cloudHasData) {
+      // Ya había datos en esta cuenta — la nube manda sobre lo que hay en este dispositivo.
+      if (cloud.settings) state.settings = { ...state.settings, ...cloud.settings, onboarded: true };
+      if (cloud.weights.length) state.weights = cloud.weights;
+      if (cloud.workouts.length) state.workouts = cloud.workouts;
+      if (Object.keys(cloud.supps).length) state.supps = cloud.supps;
+      storeSet(STORE_KEYS.settings, state.settings);
+      storeSet(STORE_KEYS.weights, state.weights);
+      storeSet(STORE_KEYS.workouts, state.workouts);
+      storeSet(STORE_KEYS.supps, state.supps);
+      showToast("Datos recuperados de la nube ☁️");
+    } else if (state.settings.onboarded) {
+      // Primera vez con esta cuenta y ya había progreso en este dispositivo — lo subimos.
+      await CloudSync.pushSettings(user.uid, state.settings);
+      await Promise.all(state.weights.map(w => CloudSync.pushWeight(user.uid, w)));
+      await Promise.all(state.workouts.map(w => CloudSync.pushWorkout(user.uid, w)));
+      await Promise.all(Object.entries(state.supps).map(([dk, arr]) => CloudSync.pushSupps(user.uid, dk, arr)));
+      showToast("Copia de seguridad subida a la nube ☁️");
+    }
+    boot();
+  } catch (e) {
+    showToast("No se pudo sincronizar con la nube");
+  } finally {
+    cloudSyncInProgress = false;
+  }
+}
+if (typeof CloudSync !== "undefined" && CloudSync.enabled) {
+  CloudSync.onAuthChange(handleCloudAuthChange);
+}
