@@ -934,15 +934,9 @@ function renderMonthGrid() {
   const gridStart = addDays(firstOfMonth, -startOffset);
   const today = startOfDay(new Date());
 
-  let html = `
-    <div class="month-nav">
-      <button class="icon-btn" id="monthPrev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <div class="month-label">${MONTHS_ES_LONG[month]} ${year}</div>
-      <button class="icon-btn" id="monthNext"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-    </div>
-    <div class="month-dow-row">${DOW_MINI.slice(1).concat(DOW_MINI[0]).map(d => `<span>${d}</span>`).join("")}</div>
-    <div class="month-grid">`;
+  const phasesInView = new Set();
 
+  let cellsHtml = "";
   for (let i = 0; i < 42; i++) {
     const d = addDays(gridStart, i);
     if (i >= 35 && d.getMonth() !== month) break; // no mostrar 6ª fila si no hace falta
@@ -952,6 +946,8 @@ function renderMonthGrid() {
     const milestone = milestoneForDate(d);
     const dWeek = getWeekNumber(d);
     const isZoneReviewMon = JS_DOW_TO_KEY[d.getDay()] === "mon" && isZoneReviewWeek(dWeek);
+    const dPhase = (dWeek >= 1 && dWeek <= TOTAL_PLAN_WEEKS) ? getPhaseForWeek(dWeek) : null;
+    if (dPhase && inMonth) phasesInView.add(dPhase.key);
 
     const badges = [];
     if (sched) badges.push(`<span class="month-cell-dot" style="background:${dayTypeColor(sched.type)}"></span>`);
@@ -959,15 +955,29 @@ function renderMonthGrid() {
     if (milestone) badges.push(`<span class="month-cell-icon">${milestone.icon}</span>`);
     if (isZoneReviewMon) badges.push(`<span class="month-cell-icon">🫀</span>`);
 
-    const titleParts = [milestone?.label, isZoneReviewMon ? "Revisar zonas de FC" : null, sched?.isWeighDay ? "Día de pesaje" : null].filter(Boolean);
+    const titleParts = [dPhase?.name, milestone?.label, isZoneReviewMon ? "Revisar zonas de FC" : null, sched?.isWeighDay ? "Día de pesaje" : null].filter(Boolean);
+    const bgStyle = (dPhase && !milestone) ? `style="background: color-mix(in srgb, ${dPhase.color} ${inMonth ? 16 : 8}%, var(--surface));"` : "";
 
-    html += `
-      <div class="month-cell ${inMonth ? "" : "out"} ${isToday ? "today" : ""} ${milestone ? "milestone" : ""}" data-date="${dateKey(d)}" title="${titleParts.join(" · ")}">
+    cellsHtml += `
+      <div class="month-cell ${inMonth ? "" : "out"} ${isToday ? "today" : ""} ${milestone ? "milestone" : ""}" ${bgStyle} data-date="${dateKey(d)}" title="${titleParts.join(" · ")}">
         <span class="month-cell-num">${d.getDate()}</span>
         <span class="month-cell-badges">${badges.join("")}</span>
       </div>`;
   }
-  html += `</div>
+
+  const phaseLegendHtml = phasesInView.size
+    ? `<div class="phase-legend">${PHASES.filter(p => phasesInView.has(p.key)).map(p => `<span class="legend-item"><i style="background:${p.color}"></i>${p.name}</span>`).join("")}</div>`
+    : "";
+
+  let html = `
+    <div class="month-nav">
+      <button class="icon-btn" id="monthPrev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="month-label">${MONTHS_ES_LONG[month]} ${year}</div>
+      <button class="icon-btn" id="monthNext"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    ${phaseLegendHtml}
+    <div class="month-dow-row">${DOW_MINI.slice(1).concat(DOW_MINI[0]).map(d => `<span>${d}</span>`).join("")}</div>
+    <div class="month-grid">${cellsHtml}</div>
     <div class="month-legend">
       ${[
         ["rest", "Descanso"], ["active", "Activo"], ["gym", "Gimnasio"], ["quality", "Calidad"], ["long", "Tirada larga"], ["general", "Fase sin calendario"]
@@ -998,10 +1008,20 @@ function openDayModal(dateObj) {
   }
   const dayKey = JS_DOW_TO_KEY[dateObj.getDay()];
   const d = getDaySchedule(week, dayKey);
+  const phase = d.phase;
+  const weightTarget = getWeightTargetForWeek(week);
+  const phaseContextCard = `
+    <div class="card tight phase-context-card" style="border-color: color-mix(in srgb, ${phase.color} 40%, var(--border))">
+      <div class="badge-row" style="margin-top:0">
+        <span class="badge" style="background:color-mix(in srgb, ${phase.color} 20%, transparent); border-color:color-mix(in srgb, ${phase.color} 45%, transparent); color:${phase.color}"><span class="dot" style="background:${phase.color}"></span>${phase.shortLabel} · ${phase.name}</span>
+        ${weightTarget ? `<span class="badge">🎯 ${weightTarget.weight} kg esta semana</span>` : ""}
+      </div>
+      <p class="phase-summary" style="margin-top:8px">${phase.summary}</p>
+    </div>`;
   const milestoneBanner = milestone ? `<div class="card" style="border-color: color-mix(in srgb, var(--z4) 45%, var(--border))"><div class="card-row"><span style="font-size:20px">${milestone.icon}</span><h4 style="flex:1">${milestone.label}</h4></div><p class="phase-summary" style="margin-top:6px">${milestone.desc}</p></div>` : "";
   openModal(
     `<div class="modal-title">${d.label} · ${fmtDateShort(dateObj)}</div><div class="modal-desc">Semana ${week} · ${d.typeLabel}${d.isWeighDay ? " · ⚖️ pesaje" : ""}</div>`,
-    applyCustomZoneText(`<div>${milestoneBanner}${fullDayHTML(d, dateObj)}</div>`)
+    applyCustomZoneText(`<div>${phaseContextCard}${milestoneBanner}${fullDayHTML(d, dateObj)}</div>`)
   );
   bindSuppHandlers();
   const trainKeys = ["gym", "quality", "long", "race"];
@@ -1028,7 +1048,7 @@ function renderFases() {
       <div class="card phase-card ${isCurrent ? "open" : ""}" data-phase="${p.key}">
         <div class="phase-head">
           <div>
-            <div class="phase-num">FASE ${p.id} · ${p.dateLabel}</div>
+            <div class="phase-num">${p.shortLabel.toUpperCase()} · ${p.dateLabel}</div>
             <div class="phase-name">${p.name}</div>
             <div class="phase-range">Semanas ${p.weeks[0]}–${p.weeks[1]}${isCurrent ? " · en curso" : isPast ? " · completada" : ""}</div>
           </div>
