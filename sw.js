@@ -58,3 +58,33 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+// Aviso de respaldo en segundo plano (solo donde el navegador soporta Periodic
+// Background Sync — hoy en día básicamente Chrome/Android con la PWA instalada
+// y "engagement" suficiente). No puede calcular el entreno exacto del día
+// porque el service worker no tiene acceso a localStorage, así que se limita
+// a recordar que se abra la app; el aviso preciso ("hoy toca báscula/gimnasio")
+// se manda desde la propia app en cuanto la abres (ver js/app.js).
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === "forja21-daily-check") {
+    event.waitUntil(
+      self.registration.showNotification("Forja21", {
+        body: "Abre la app para ver qué toca hoy: entreno, comida y si hay que pesarse.",
+        icon: "icons/icon-192.png",
+        badge: "icons/icon-192.png",
+        tag: "forja21-daily-fallback"
+      })
+    );
+  }
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientsArr) => {
+      const existing = clientsArr.find((c) => c.url.includes(self.registration.scope));
+      if (existing) return existing.focus();
+      return self.clients.openWindow("./index.html");
+    })
+  );
+});
