@@ -614,16 +614,10 @@ function renderOnboarding() {
   $("#view").innerHTML = `
     <div class="hero">
       <div class="hero-eyebrow">Bienvenido a Forja21</div>
-      <div class="hero-title">Tu entrenador hacia Granollers</div>
-      <p class="hero-desc">
-        Este plan te lleva en ${PHASES[2].weeks[1]} semanas hasta la
-        <b style="color:var(--text)">Mitja Marató de Granollers</b> (${PROFILE_DEFAULTS.raceGoal}), pesando ${WEEKLY_WEIGHTS_BLOQUE1[WEEKLY_WEIGHTS_BLOQUE1.length - 1].weight} kg el día de la carrera.
-        Después, dos fases más de construcción muscular y definición te llevan a un físico marcado
-        para finales de junio, con los abdominales visibles.
-      </p>
+      <div class="hero-title">${PLAN_COPY.welcomeTitle}</div>
+      <p class="hero-desc">${PLAN_COPY.welcomeDesc(PROFILE_DEFAULTS.raceGoal, WEEKLY_WEIGHTS_BLOQUE1.length ? WEEKLY_WEIGHTS_BLOQUE1[WEEKLY_WEIGHTS_BLOQUE1.length - 1].weight : "")}</p>
       <div class="badge-row">
-        <span class="badge">🏁 22 de enero · Granollers</span>
-        <span class="badge">💪 Junio · Definición</span>
+        ${PLAN_COPY.welcomeBadges.map(b => `<span class="badge">${b}</span>`).join("")}
       </div>
     </div>
 
@@ -721,25 +715,40 @@ function renderStatStrip() {
 
   if (week < 1) {
     const days = Math.ceil((startOfDay(parseDate(state.settings.startDate)) - startOfDay(date)) / 86400000);
-    el.innerHTML = `
-      <div class="stat-chip"><b>${days}</b><span>días para empezar</span></div>
-      <div class="stat-chip"><b>${state.settings.startWeight} kg</b><span>peso de salida</span></div>`;
+    el.innerHTML = PLAN_MODE === "v2"
+      ? `<div class="stat-chip"><b>${days}</b><span>días para empezar</span></div>
+         <div class="stat-chip"><b>12</b><span>semanas de plan</span></div>`
+      : `<div class="stat-chip"><b>${days}</b><span>días para empezar</span></div>
+         <div class="stat-chip"><b>${state.settings.startWeight} kg</b><span>peso de salida</span></div>`;
     return;
   }
 
   if (isPlanFinished(week)) {
-    el.innerHTML = `
-      <div class="stat-chip"><b>🏆</b><span>plan completado</span></div>
-      <div class="stat-chip"><b>${latestWeight().toFixed(1)} kg</b><span>peso actual</span></div>`;
+    el.innerHTML = PLAN_MODE === "v2"
+      ? `<div class="stat-chip"><b>🏆</b><span>12 semanas completadas</span></div>
+         <div class="stat-chip"><b>${state.workouts.length}</b><span>sesiones registradas</span></div>`
+      : `<div class="stat-chip"><b>🏆</b><span>plan completado</span></div>
+         <div class="stat-chip"><b>${latestWeight().toFixed(1)} kg</b><span>peso actual</span></div>`;
     return;
   }
 
-  const st = weightStatus(week);
   const dayKey = JS_DOW_TO_KEY[date.getDay()];
   const day = getDaySchedule(week, dayKey);
   const dk = dateKey(date);
   const checks = getSuppChecks(dk);
 
+  if (PLAN_MODE === "v2") {
+    const trainKeys = trainingDayKeysForWeek(week);
+    const doneThisWeek = weekDates(week).filter(d => trainKeys.includes(d.key) && startOfDay(d.date) <= startOfDay(date) && workoutsForDate(dateKey(d.date)).length > 0).length;
+    el.innerHTML = `
+      <div class="stat-chip"><b>S${week}/${TOTAL_PLAN_WEEKS}</b><span>semana</span></div>
+      <div class="stat-chip"><b>${doneThisWeek}/${trainKeys.length}</b><span>entrenos semana</span></div>
+      <div class="stat-chip"><b>${day.typeLabel}</b><span>hoy</span></div>
+      <div class="stat-chip"><b>${checks.length}/${day.supplements.length}</b><span>suplementos</span></div>`;
+    return;
+  }
+
+  const st = weightStatus(week);
   el.innerHTML = `
     <div class="stat-chip"><b>S${week}</b><span>semana</span></div>
     <div class="stat-chip"><b class="${st.cls === "status-ontrack" ? "ok" : st.cls === "status-behind" ? "warn" : ""}">${latestWeight().toFixed(1)} kg</b><span>${st.label}</span></div>
@@ -761,15 +770,13 @@ function renderHoy() {
   if (week < 1) {
     const startD = startOfDay(parseDate(state.settings.startDate));
     const days = Math.ceil((startD - startOfDay(date)) / 86400000);
-    const w1sat = weekDates(1).find(d => d.key === "sat");
     $("#view").innerHTML = `
         <div class="hero">
           <div class="hero-eyebrow">${greeting}, ${name}</div>
           <div class="hero-title">Tu plan empieza en ${days} día${days === 1 ? "" : "s"}</div>
-          <p class="hero-desc">La semana 1 arranca el lunes ${fmtDateShort(startD)}. Objetivo: llegar a la Mitja Marató de Granollers el 24 de enero de 2027 pesando ${WEEKLY_WEIGHTS_BLOQUE1[WEEKLY_WEIGHTS_BLOQUE1.length - 1].weight} kg.</p>
+          <p class="hero-desc">${PLAN_COPY.preplanDesc(fmtDateShort(startD), WEEKLY_WEIGHTS_BLOQUE1.length ? WEEKLY_WEIGHTS_BLOQUE1[WEEKLY_WEIGHTS_BLOQUE1.length - 1].weight : "")}</p>
           <div class="badge-row">
-            <span class="badge">⚖️ Peso de salida: ${state.settings.startWeight} kg</span>
-            <span class="badge">🏁 ${PROFILE_DEFAULTS.raceGoal}</span>
+            ${PLAN_COPY.preplanBadges(state.settings.startWeight, PROFILE_DEFAULTS.raceGoal).map(b => `<span class="badge">${b}</span>`).join("")}
           </div>
         </div>
         <div class="card">
@@ -787,16 +794,17 @@ function renderHoy() {
     $("#view").innerHTML = `
         <div class="hero">
           <div class="hero-eyebrow">${greeting}, ${name}</div>
-          <div class="hero-title">🏆 Has completado el plan</div>
-          <p class="hero-desc">Del ${state.settings.startWeight} kg inicial hasta hoy: ${latestWeight().toFixed(1)} kg, con ${totalWorkouts} sesiones registradas por el camino. Si quieres seguir entrenando, puedes ajustar la fecha de inicio en Ajustes para repasar cualquier fase del plan desde el Calendario.</p>
+          <div class="hero-title">${PLAN_COPY.finishedTitle}</div>
+          <p class="hero-desc">${PLAN_COPY.finishedDesc(state.settings.startWeight, latestWeight().toFixed(1), totalWorkouts)}</p>
         </div>
+        ${MILESTONES.length ? `
         <div class="card">
           <h4>Tus hitos</h4>
           ${MILESTONES.map(m => `
             <div class="exercise">
               <div><div class="exercise-name">${m.icon} ${m.label}</div><div class="exercise-note">${m.desc}</div></div>
             </div>`).join("")}
-        </div>`;
+        </div>` : ""}`;
     return;
   }
 
@@ -824,7 +832,7 @@ function renderHoy() {
   let reminderHTML = "";
   const tomorrow = addDays(date, 1);
   const tomorrowWeek = getWeekNumber(tomorrow);
-  if (JS_DOW_TO_KEY[tomorrow.getDay()] === "sat" && tomorrowWeek >= 1 && !getWeightLog(tomorrowWeek)) {
+  if (PLAN_MODE !== "v2" && JS_DOW_TO_KEY[tomorrow.getDay()] === "sat" && tomorrowWeek >= 1 && !getWeightLog(tomorrowWeek)) {
     const t = getWeightTargetForWeek(tomorrowWeek);
     reminderHTML += `
       <div class="card" style="border-color: color-mix(in srgb, var(--z4) 40%, var(--border))">
@@ -841,6 +849,10 @@ function renderHoy() {
       </div>`;
   }
 
+  const weightTile = PLAN_MODE === "v2"
+    ? `<div class="stat-tile"><div class="stat-tile-val">${week}/${TOTAL_PLAN_WEEKS}</div><div class="stat-tile-label">Semana del plan</div></div>`
+    : `<div class="stat-tile"><div class="stat-tile-val">${pct.toFixed(0)}%</div><div class="stat-tile-label">Progreso de peso</div></div>`;
+
   let html = `
     <div class="hero">
       <div class="hero-eyebrow">${greeting}, ${name}</div>
@@ -848,7 +860,7 @@ function renderHoy() {
       <p class="hero-desc">${phase.name} — ${phase.summary}</p>
       <div class="stats-grid">
         <div class="stat-tile"><div class="stat-tile-val">S${week}</div><div class="stat-tile-label">Semana actual</div></div>
-        <div class="stat-tile"><div class="stat-tile-val">${pct.toFixed(0)}%</div><div class="stat-tile-label">Progreso de peso</div></div>
+        ${weightTile}
         ${trainingStatTile}
         <div class="stat-tile"><div class="stat-tile-val">${suppChecks.length}/${day.supplements.length}</div><div class="stat-tile-label">Suplementos hoy</div></div>
       </div>
@@ -1039,10 +1051,10 @@ function renderMonthGrid() {
       ${[
         ["rest", "Descanso"], ["active", "Activo"], ["gym", "Gimnasio"], ["quality", "Calidad"], ["long", "Tirada larga"], ["general", "Fase sin calendario"]
       ].map(([t, l]) => `<span class="legend-item"><i style="background:${dayTypeColor(t)}"></i>${l}</span>`).join("")}
-      <span class="legend-item">⚖️ Pesaje</span>
-      <span class="legend-item">🏁 Carrera</span>
-      <span class="legend-item">🏆 Objetivo final</span>
-      <span class="legend-item">🫀 Revisar zonas FC</span>
+      ${PLAN_MODE !== "v2" ? `<span class="legend-item">⚖️ Pesaje</span>` : ""}
+      ${MILESTONES.some(m => m.icon === "🏁") ? `<span class="legend-item">🏁 Carrera</span>` : ""}
+      ${MILESTONES.some(m => m.icon === "🏆") ? `<span class="legend-item">🏆 Objetivo final</span>` : ""}
+      ${ZONE_REVIEW_INTERVAL_WEEKS < 999 ? `<span class="legend-item">🫀 Revisar zonas FC</span>` : ""}
     </div>`;
   return html;
 }
@@ -1109,9 +1121,10 @@ function renderFases() {
     const isPast = week > p.weeks[1];
     const span = p.weeks[1] - p.weeks[0] + 1;
     const pct = isPast ? 100 : isCurrent ? Math.min(100, Math.max(4, ((week - p.weeks[0] + 1) / span) * 100)) : 0;
-    const bal = phaseCalorieBalance(p);
-    const balAbsKcal = Math.abs(bal.dailyKcalBalance);
-    const balAbsGrams = Math.round(Math.abs(bal.weeklyChangeKg) * 1000);
+    const hasWeightGoal = p.weightFrom !== null && p.weightFrom !== undefined && p.weightTo !== null && p.weightTo !== undefined;
+    const bal = hasWeightGoal ? phaseCalorieBalance(p) : null;
+    const balAbsKcal = bal ? Math.abs(bal.dailyKcalBalance) : 0;
+    const balAbsGrams = bal ? Math.round(Math.abs(bal.weeklyChangeKg) * 1000) : 0;
     html += `
       <div class="card phase-card ${isCurrent ? "open" : ""}" data-phase="${p.key}">
         <div class="phase-head">
@@ -1120,7 +1133,7 @@ function renderFases() {
             <div class="phase-name">${p.name}</div>
             <div class="phase-range">Semanas ${p.weeks[0]}–${p.weeks[1]}${isCurrent ? " · en curso" : isPast ? " · completada" : ""}</div>
           </div>
-          <div class="phase-weight">${p.weightFrom} → ${p.weightTo} kg</div>
+          ${hasWeightGoal ? `<div class="phase-weight">${p.weightFrom} → ${p.weightTo} kg</div>` : ""}
         </div>
         <div class="phase-progress-bar"><i style="width:${pct}%"></i></div>
         <div class="phase-body">
@@ -1130,6 +1143,7 @@ function renderFases() {
             <span class="badge">🎯 ${p.kcal}</span>
             ${p.macroFocus ? `<span class="badge">${p.macroFocus}</span>` : ""}
           </div>
+          ${bal ? `
           <div class="calorie-balance-card">
             <div class="calorie-balance-head">⚖️ Balance calórico estimado</div>
             <p class="phase-summary" style="margin-top:4px">
@@ -1138,11 +1152,11 @@ function renderFases() {
                 : `Un superávit medio de <b style="color:var(--text)">~${balAbsKcal} kcal/día</b> explica la ganancia prevista de <b style="color:var(--text)">~${balAbsGrams} g/semana</b>.`}
             </p>
             <p class="phase-summary" style="margin-top:4px; font-size:11px">Calculado a partir del objetivo de báscula de esta fase (1 kg ≈ 7.700 kcal) — es una estimación, no una medición real.</p>
-          </div>
+          </div>` : ""}
         </div>
       </div>`;
   });
-  $("#view").innerHTML = `<div class="section-title">Las 5 fases del plan</div>` + html;
+  $("#view").innerHTML = `<div class="section-title">${PHASES.length > 1 ? `Las ${PHASES.length} fases del plan` : "Tu plan"}</div>` + html;
 
   $$(".phase-card").forEach(el => {
     el.addEventListener("click", () => el.classList.toggle("open"));
@@ -1151,6 +1165,26 @@ function renderFases() {
 
 function renderPeso() {
   const { week } = todayInfo();
+
+  if (PLAN_MODE === "v2") {
+    const stats = computeStats();
+    const html = `
+      <div class="section-title">Seguimiento</div>
+      <div class="card">
+        <p class="phase-summary">Este plan no usa báscula — el resultado se ve en la piel del brazo, no en el peso. Aquí tienes tu constancia real.</p>
+      </div>
+      <div class="card">
+        ${statBarHTML("Entrenos completados", stats.trainingPct, `${stats.completedCount} de ${stats.scheduledCount} sesiones programadas hasta hoy`, "var(--z4)")}
+        ${statBarHTML("Suplementos tomados", stats.suppPct, "Media diaria de creatina, proteína y omega 3 marcados sobre los programados", "var(--brand-2)")}
+      </div>
+      <div class="section-title">Recuerda cada domingo</div>
+      <div class="card">
+        <p class="phase-summary">${V2_WEEKLY_REVIEW_NOTE}</p>
+      </div>`;
+    $("#view").innerHTML = html;
+    return;
+  }
+
   const target = week >= 1 ? getWeightTargetForWeek(week) : WEEKLY_WEIGHTS_BLOQUE1[0];
   const log = week >= 1 ? getWeightLog(week) : null;
   const st = week >= 1 ? weightStatus(week) : { label: "El plan aún no ha empezado", cls: "status-none" };
@@ -1303,10 +1337,11 @@ function renderAjustes() {
     <div class="card">
       <div class="field"><label>Nombre</label><input id="setName" value="${s.name}" /></div>
       <div class="field"><label>Fecha de inicio del plan (lunes de la semana 1)</label><input id="setStart" type="date" value="${s.startDate}" /></div>
-      <div class="field"><label>Peso inicial (kg)</label><input id="setStartWeight" type="number" step="0.1" value="${s.startWeight}" /></div>
+      ${PLAN_MODE !== "v2" ? `<div class="field"><label>Peso inicial (kg)</label><input id="setStartWeight" type="number" step="0.1" value="${s.startWeight}" /></div>` : ""}
       <button class="btn btn-primary" id="saveSettings">Guardar cambios</button>
     </div>
 
+    ${HR_ZONES.length ? `
     <div class="section-title">Zonas de frecuencia cardíaca</div>
     <div class="card">
       <p class="phase-summary" style="margin-bottom:10px">Ajusta los ppm de cada zona cuando revises tu forma física — se actualizan en todo el plan (entrenos, calendario y avisos).</p>
@@ -1327,7 +1362,7 @@ function renderAjustes() {
       <button class="btn btn-primary" id="saveZones" style="margin-top:12px">Guardar zonas</button>
       <div class="divider"></div>
       <p class="phase-summary">FC reposo ${s.fcr} ppm · FC máxima ${s.fcm} ppm</p>
-    </div>
+    </div>` : ""}
 
     <div class="section-title">Suplementación de referencia</div>
     <div class="card">
@@ -1344,6 +1379,7 @@ function renderAjustes() {
         </div>`).join("")}
     </div>
 
+    ${Object.keys(CALORIE_DICTIONARY).length ? `
     <div class="section-title">Diccionario de calorías</div>
     <div class="card">
       <p class="phase-summary" style="margin-bottom:8px">Pesos en crudo/seco — así se pesan en la báscula de cocina.</p>
@@ -1361,7 +1397,7 @@ function renderAjustes() {
               <div class="exercise-set">${it.kcal} kcal</div>
             </div>`).join("")}
         </div>`).join("")}
-    </div>
+    </div>` : ""}
 
     <div class="section-title">Historial de sesiones</div>
     <div class="card" id="workoutHistoryCard">
@@ -1414,7 +1450,8 @@ function renderAjustes() {
       const monday = mondayOfWeek(parseDate(pickedRaw));
       state.settings.startDate = dateKey(monday);
     }
-    state.settings.startWeight = parseFloat($("#setStartWeight").value) || state.settings.startWeight;
+    const startWeightEl = $("#setStartWeight");
+    if (startWeightEl) state.settings.startWeight = parseFloat(startWeightEl.value) || state.settings.startWeight;
     storeSet(STORE_KEYS.settings, state.settings);
     cloudPush(() => CloudSync.pushSettings(CloudSync.user.uid, state.settings));
     showToast("Ajustes guardados" + (pickedRaw && pickedRaw !== state.settings.startDate ? " (ajustado al lunes de esa semana)" : ""));
@@ -1513,6 +1550,7 @@ function renderAjustes() {
   });
   $("#signOutBtn")?.addEventListener("click", async () => {
     await CloudSync.signOutUser();
+    if (typeof applyPlanForEmail === "function") applyPlanForEmail(null);
     showToast("Sesión cerrada — tus datos siguen en este dispositivo");
     render();
   });
@@ -1605,6 +1643,7 @@ async function handleCloudAuthChange(user) {
   if (!user || cloudSyncInProgress) return;
   cloudSyncInProgress = true;
   try {
+    if (typeof applyPlanForEmail === "function") applyPlanForEmail(user.email);
     const cloud = await CloudSync.pullAll(user.uid);
     const cloudHasData = cloud.settings || cloud.weights.length || cloud.workouts.length || Object.keys(cloud.supps).length;
 
