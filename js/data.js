@@ -57,6 +57,22 @@ const WEEKLY_WEIGHTS_BLOQUE1 = [
 ];
 
 /* ---------------------------------------------------------------------
+   FASE 3 — Peso objetivo semana a semana (semanas 23–32, Febrero-Abril 2027)
+   --------------------------------------------------------------------- */
+const WEEKLY_WEIGHTS_FASE3 = [
+  { week: 23, weight: 75.5, note: "Post-Granollers — inicio de Fase 3" },
+  { week: 24, weight: 75.8 },
+  { week: 25, weight: 76.1 },
+  { week: 26, weight: 76.4 },
+  { week: 27, weight: 76.7, note: "Actualizar peso en Garmin Connect para calibrar calorías" },
+  { week: 28, weight: 77.0 },
+  { week: 29, weight: 77.3 },
+  { week: 30, weight: 77.6 },
+  { week: 31, weight: 77.9 },
+  { week: 32, weight: 78.5, note: "¡Base muscular lista para la Fase 4!" }
+];
+
+/* ---------------------------------------------------------------------
    FASE 4 — Peso objetivo semana a semana (semanas 33–40, Mayo-Junio 2027)
    --------------------------------------------------------------------- */
 const WEEKLY_WEIGHTS_FASE4 = [
@@ -71,7 +87,7 @@ const WEEKLY_WEIGHTS_FASE4 = [
 ];
 
 function getAllWeightTargetWeeks() {
-  return [...WEEKLY_WEIGHTS_BLOQUE1, ...WEEKLY_WEIGHTS_FASE4].map(w => w.week).sort((a, b) => a - b);
+  return [...WEEKLY_WEIGHTS_BLOQUE1, ...WEEKLY_WEIGHTS_FASE3, ...WEEKLY_WEIGHTS_FASE4].map(w => w.week).sort((a, b) => a - b);
 }
 
 /* ---------------------------------------------------------------------
@@ -81,36 +97,42 @@ const PHASES = [
   {
     id: 1,
     key: "fase1",
+    shortLabel: "Fase 1",
     name: "Base Aeróbica, Fuerza y CaCo",
     weeks: [1, 8],
     dateLabel: "Agosto — Octubre 2026",
     weightFrom: 87.5,
     weightTo: 83.1,
     kcal: "1.800 – 1.900 kcal",
+    color: "#3E7BFA",
     summary: "Adaptación articular y control estricto de Zona 2 para evitar fascitis y dolor de cadera. Déficit calórico moderado con recorte de hidratos en días de descanso.",
     focus: ["Control estricto de Zona 2", "Fuerza general 2x/semana", "Caminar-Correr progresivo los sábados"]
   },
   {
     id: 2,
     key: "fase1b",
+    shortLabel: "Fase 1B",
     name: "Transición, Fondo y Carga",
     weeks: [9, 13],
     dateLabel: "Octubre — Noviembre 2026",
     weightFrom: 83.1,
     weightTo: 80.3,
     kcal: "1.800 – 1.900 kcal",
+    color: "#2DD4BF",
     summary: "Se eliminan los tramos caminando de los sábados: los rodajes pasan a ser continuos, de 14 a 16 km, en Zona 2 pura. Se mantiene la estructura nutricional, subiendo el agua a 3,5 L/día.",
     focus: ["Rodajes continuos sin caminar", "14–16 km en Zona 2 pura", "Agua 3,5 L/día"]
   },
   {
     id: 3,
     key: "fase2",
+    shortLabel: "Fase 2",
     name: "Ritmo Específico Gran Ollers",
     weeks: [14, 22],
     dateLabel: "Noviembre 2026 — Enero 2027",
     weightFrom: 80.3,
     weightTo: 75.5,
     kcal: "≈2.100 kcal días de calidad · ≈1.700 kcal días de descanso",
+    color: "#8B5CF6",
     summary: "Objetivo: clavar el ritmo de carrera de 4:45–4:50 min/km. Ciclado estricto de hidratos, potencia en el gimnasio y series largas de umbral los viernes.",
     focus: ["Series de umbral (3.000 m) los viernes", "Sentadillas explosivas para la subida a La Garriga", "Tirada larga con bloques de ritmo", "Semana 22: ¡carrera!"],
     raceWeek: 22
@@ -118,24 +140,28 @@ const PHASES = [
   {
     id: 4,
     key: "fase3",
+    shortLabel: "Fase 3",
     name: "Construcción Muscular",
     weeks: [23, 32],
     dateLabel: "Febrero — Abril 2027",
     weightFrom: 75.5,
     weightTo: 78.5,
-    kcal: "≈2.400 kcal (normocalórica)",
-    summary: "Subida controlada de músculo neto: 2 días de carrera suave (8–10 km) y 4 días de gimnasio pesado (series de 4x8–10 repeticiones). Introducción diaria del vacío abdominal en ayunas.",
-    focus: ["4 días de gimnasio pesado", "2 días de carrera suave", "Vacío abdominal diario en ayunas"]
+    kcal: "≈2.400 – 2.500 kcal (superávit ligero)",
+    color: "#FB923C",
+    summary: "Subida controlada de músculo neto (~300 g/semana): 4 días de gimnasio de hipertrofia (8–10 repeticiones), running regenerativo en Zona 2, y vacío abdominal cada mañana en ayunas para mantener la cintura estrecha mientras ganas volumen.",
+    focus: ["Hipertrofia 8–10 repeticiones", "Vacío abdominal diario en ayunas", "Plátano post-entreno obligatorio", "Arroz y pasta se mantienen al mediodía"]
   },
   {
     id: 5,
     key: "fase4",
+    shortLabel: "Fase 4",
     name: "El Destape Final y Abdominales",
     weeks: [33, 40],
     dateLabel: "Mayo — Junio 2027",
     weightFrom: 78.5,
     weightTo: 71.5,
     kcal: "≈1.600 – 1.700 kcal",
+    color: "#EC4899",
     summary: "Bajada definitiva hasta 71–72 kg reales. Corte de hidratos a partir de las 16:00, agua a 4 L/día y HIIT en cinta tras las pesas pesadas para máxima definición.",
     focus: ["Hidratos solo en desayuno y comida", "HIIT post-pesas (10x30s Z5 + 1' caminando)", "Agua 4 L/día", "Cena clínica de definición"]
   }
@@ -384,17 +410,145 @@ const MEALS_PHASE2_LOW = { // Lunes, Miércoles, Domingo — recorte de hidratos
   ]
 };
 
-// Menú general de referencia para Fase 3 (Construcción Muscular) — no hay calendario día a día
-const MEALS_FASE3 = {
-  label: "Menú tipo de hipertrofia (~2.400 kcal)",
+/* ---------------------------------------------------------------------
+   FASE 3 — Construcción Muscular (semanas 23–32, Febrero-Abril 2027)
+   Calendario día a día completo.
+   --------------------------------------------------------------------- */
+
+const FASE3_RULES_NOTE = "Las 3 normas del volumen neto: el arroz y la pasta se mantienen al mediodía (a diferencia de la Fase 4, aquí sí necesitas hidratos por la tarde para mover pesos pesados), no te saltes el vacío abdominal cada mañana en ayunas (mantiene el transverso tenso mientras ganas volumen), y el plátano post-entreno es obligatorio para abrir la puerta celular a la proteína.";
+
+const MEALS_FASE3_MON = { // Lunes, Martes — días de pesos fuertes
+  label: "Menú de hipertrofia (~2.400 kcal)",
   zoneColor: "#F5B400",
   items: [
-    { meal: "Desayuno", text: "Tortilla de 2 huevos enteros + 2 claras + 1 tostada integral grande con medio aguacate, sal y limón. Café con leche desnatada." },
-    { meal: "Comida", text: "220 g de ternera magra, pavo o pollo + 90 g (en seco) de arroz, pasta o quinoa + verduras salteadas con aceite de oliva. Toma los 5 g de Creatina." },
-    { meal: "Merienda (pre-pesas)", text: "60 g de copos de avena con leche desnatada o de almendras + 1 cacito de proteína Whey Isolate." },
-    { meal: "Post-entreno", text: "1 plátano maduro inmediatamente al terminar las pesas pesadas." },
-    { meal: "Cena", text: "200 g de salmón, dorada o lubina al horno + puré de calabaza o verduras asadas." }
+    { meal: "Desayuno", text: "Tortilla de 2 huevos enteros + 2 claras + 1 tostada integral grande con medio aguacate chafado. Café con un chorro de leche desnatada." },
+    { meal: "Comida", text: "220 g de pechuga de pavo a la plancha + 90 g (en seco) de arroz integral + un plato grande de verduras salteadas (calabacín, champiñones) con aceite de oliva." },
+    { meal: "Merienda (pre-entreno, 17:00)", text: "Un bol con 60 g de copos de avena mezclados con leche desnatada y un cacito de proteína Whey Isolate." },
+    { meal: "Post-entreno", text: "1 plátano maduro inmediatamente al terminar las pesas." },
+    { meal: "Cena", text: "200 g de filete de salmón al horno + puré de calabaza con un chorrito de aceite de oliva." }
   ]
+};
+
+const MEALS_FASE3_TUE = { // Martes, Jueves (mismo menú)
+  label: "Menú de hipertrofia (~2.400 kcal)",
+  zoneColor: "#F5B400",
+  items: [
+    { meal: "Desayuno", text: "Mismo desayuno del huevo y el aguacate." },
+    { meal: "Comida", text: "220 g de filete de ternera magra + 90 g (en seco) de pasta integral + ensalada variada con tomate. Toma la Creatina aquí." },
+    { meal: "Merienda", text: "El mismo bol de avena con leche y proteína." },
+    { meal: "Post-entreno", text: "1 plátano maduro." },
+    { meal: "Cena", text: "200 g de dorada o lubina al horno con patatas panadera y cebolla." }
+  ]
+};
+
+const MEALS_FASE3_WED = { // Miércoles, Domingo
+  label: "Menú de mantenimiento energético",
+  zoneColor: "#22C55E",
+  items: [
+    { meal: "Desayuno", text: "Tortilla de 2 huevos enteros + 2 claras + 1 tostada integral con miel y queso fresco." },
+    { meal: "Comida", text: "220 g de pechuga de pollo + 250 g de patata hervida + un plato grande de brócoli al vapor." },
+    { meal: "Merienda", text: "200 g de queso fresco batido 0% con un puñado de nueces y un toque de canela." },
+    { meal: "Cena", text: "Tortilla francesa de 3 huevos con dos latas de atún al natural + crema de verduras limpia." }
+  ]
+};
+
+const MEALS_FASE3_SAT = { // Sábado — carga limpia de fin de semana
+  label: "Carga limpia de fin de semana",
+  zoneColor: "#FFD84D",
+  items: [
+    { meal: "Desayuno", text: "Tortilla francesa de 2 huevos enteros con 1 tostada integral con aceite de oliva." },
+    { meal: "Comida", text: "Un buen plato de pasta integral (90 g en seco) con carne picada de pollo o ternera magra y tomate natural." },
+    { meal: "Merienda", text: "200 g de yogur griego 0% con arándanos y un puñado de almendras." },
+    { meal: "Cena", text: "200 g de merluza o bacalao a la plancha con una patata hervida pequeña y espárragos verdes." }
+  ]
+};
+
+const WEEKLY_SCHEDULE_FASE3 = {
+  mon: {
+    dow: 1, label: "Lunes", type: "gym", typeLabel: "Gimnasio (Torso: Pecho/Tríceps) + Vacuum",
+    training: {
+      title: "Fuerza — hipertrofia (45 min)",
+      items: [
+        { name: "Vacío abdominal (Stomach Vacuum)", note: "3 series de 30 segundos, en ayunas por la mañana. Expulsa el aire, mete la tripa escondiendo el ombligo bajo las costillas y aguanta." }
+      ],
+      exercises: [
+        { name: "Press de banca inclinado con mancuernas", sets: "4 x 8", rest: "90s", note: "Pecho alto. La última repetición de cada serie tiene que costar de verdad." },
+        { name: "Press de banca plano con barra o mancuernas", sets: "4 x 10", rest: "90s" },
+        { name: "Cruces en polea (aperturas)", sets: "3 x 10", rest: "60s" },
+        { name: "Extensión de tríceps en polea alta", sets: "4 x 10", rest: "60s" }
+      ]
+    },
+    meals: MEALS_FASE3_MON, supplements: daySupplements({ creatina: true, proteina: true }), note: FASE3_RULES_NOTE
+  },
+  tue: {
+    dow: 2, label: "Martes", type: "gym", typeLabel: "Gimnasio (Piernas completas) + Vacuum",
+    training: {
+      title: "Fuerza — hipertrofia (45 min)",
+      items: [
+        { name: "Vacío abdominal (Stomach Vacuum)", note: "3 series de 30 segundos, en ayunas por la mañana." }
+      ],
+      exercises: [
+        { name: "Prensa de piernas inclinada", sets: "4 x 8", rest: "90s", note: "Sube el peso respecto a fases anteriores." },
+        { name: "Extensiones de cuádriceps en máquina", sets: "4 x 10", rest: "60s" },
+        { name: "Curl de femoral tumbado", sets: "4 x 10", rest: "60s" },
+        { name: "Elevación de talones en escalón (gemelos)", sets: "4 x 15", rest: "45s", note: "Muy importante para mantener a raya la fascia." }
+      ]
+    },
+    meals: MEALS_FASE3_TUE, supplements: daySupplements({ creatina: true, proteina: true }), note: FASE3_RULES_NOTE
+  },
+  wed: {
+    dow: 3, label: "Miércoles", type: "quality", typeLabel: "Running regenerativo Z2 + Vacuum",
+    training: {
+      title: "Carrera suave (45 min)",
+      items: [
+        { name: "Vacío abdominal (Stomach Vacuum)", note: "3 series de 30 segundos, en ayunas por la mañana." }
+      ],
+      detail: "Cero cinta, mejor al exterior si puedes. Rodaje completamente libre y suave de 8–10 km. El único objetivo es mantener la aguja del Garmin clavada en Zona 2 (115–126 ppm) — mantiene tu capacidad aeróbica sin interferir con el crecimiento muscular."
+    },
+    meals: MEALS_FASE3_WED, supplements: daySupplements({ creatina: true }), note: FASE3_RULES_NOTE
+  },
+  thu: {
+    dow: 4, label: "Jueves", type: "gym", typeLabel: "Gimnasio (Torso: Espalda/Bíceps) + Vacuum",
+    training: {
+      title: "Fuerza — hipertrofia (45 min)",
+      items: [
+        { name: "Vacío abdominal (Stomach Vacuum)", note: "3 series de 30 segundos, en ayunas por la mañana." }
+      ],
+      exercises: [
+        { name: "Jalón al pecho en polea alta (agarre amplio)", sets: "4 x 8", rest: "90s", note: "Día vital para dar aspecto de \"V\" a la espalda." },
+        { name: "Remo en polea baja o remo con barra", sets: "4 x 10", rest: "90s" },
+        { name: "Elevaciones laterales con mancuernas", sets: "4 x 12", rest: "60s", note: "Da redondez al hombro." },
+        { name: "Curl de bíceps alterno con mancuernas", sets: "4 x 10", rest: "60s" }
+      ]
+    },
+    meals: MEALS_FASE3_TUE, supplements: daySupplements({ creatina: true, proteina: true }), note: FASE3_RULES_NOTE
+  },
+  fri: {
+    dow: 5, label: "Viernes", type: "gym", typeLabel: "Gimnasio (Hombro/Core) + Running Z2 corto",
+    training: {
+      title: "Entreno híbrido (60 min totales)",
+      items: [
+        { name: "Vacío abdominal (Stomach Vacuum)", note: "3 series de 30 segundos, en ayunas por la mañana." }
+      ],
+      exercises: [
+        { name: "Press militar con mancuernas", sets: "3 x 10", rest: "60s" },
+        { name: "Plancha frontal isométrica", sets: "3 x 60s", rest: "45s", note: "A muerte." }
+      ],
+      cardio: "Inmediatamente después de los pesos: 30 minutos de carrera muy suave en Zona 2 (115–126 ppm). Evita que acumules grasa del superávit calórico en la zona abdominal."
+    },
+    meals: MEALS_ORANGE, supplements: daySupplements({ creatina: true, proteina: true }), note: FASE3_RULES_NOTE
+  },
+  sat: {
+    dow: 6, label: "Sábado", type: "active", typeLabel: "Descanso activo o paseo largo",
+    isWeighDay: true,
+    training: { title: "Paseo largo", detail: "Cero gimnasio, cero running. Sal a caminar de una hora a hora y media a ritmo tranquilo para quemar calorías extra sin estresar el músculo." },
+    meals: MEALS_FASE3_SAT, supplements: daySupplements({ creatina: true }), note: FASE3_RULES_NOTE
+  },
+  sun: {
+    dow: 0, label: "Domingo", type: "rest", typeLabel: "Descanso total",
+    training: { title: "Descanso total", detail: "Cero actividad. Recuperación muscular total — tus músculos crecen cuando descansas, no cuando entrenas." },
+    meals: MEALS_FASE3_WED, supplements: daySupplements(), note: FASE3_RULES_NOTE
+  }
 };
 
 /* ---------------------------------------------------------------------
@@ -582,13 +736,14 @@ function getPhaseForWeek(weekNumber) {
 
 function getWeightTargetForWeek(weekNumber) {
   return WEEKLY_WEIGHTS_BLOQUE1.find(w => w.week === weekNumber)
+    || WEEKLY_WEIGHTS_FASE3.find(w => w.week === weekNumber)
     || WEEKLY_WEIGHTS_FASE4.find(w => w.week === weekNumber)
     || null;
 }
 
 function getDaySchedule(weekNumber, dayKey) {
   const phase = getPhaseForWeek(weekNumber);
-  const source = phase.key === "fase4" ? WEEKLY_SCHEDULE_FASE4 : WEEKLY_SCHEDULE_BASE;
+  const source = phase.key === "fase4" ? WEEKLY_SCHEDULE_FASE4 : phase.key === "fase3" ? WEEKLY_SCHEDULE_FASE3 : WEEKLY_SCHEDULE_BASE;
   const base = source[dayKey];
   if (!base) return null;
 
@@ -658,15 +813,6 @@ function getDaySchedule(weekNumber, dayKey) {
     }
   }
 
-  if (phase.key === "fase3") {
-    day.isGeneralPhase = true;
-    day.type = "general";
-    day.typeLabel = phase.name;
-    day.meals = MEALS_FASE3;
-    day.supplements = daySupplements({ creatina: true, proteina: true });
-    day.note = null;
-  }
-
   return day;
 }
 
@@ -676,5 +822,7 @@ const JS_DOW_TO_KEY = { 1: "mon", 2: "tue", 3: "wed", 4: "thu", 5: "fri", 6: "sa
 // Nº de días de entreno "activo" (no descanso) programados en una semana normal
 function trainingDayKeysForWeek(weekNumber) {
   if (weekNumber === RACE_WEEK) return ["tue", "thu", "fri", "sun"];
+  const phase = getPhaseForWeek(weekNumber);
+  if (phase.key === "fase3") return ["mon", "tue", "wed", "thu", "fri"];
   return ["tue", "thu", "fri", "sat"];
 }
