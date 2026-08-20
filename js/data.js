@@ -3,7 +3,7 @@
    Extraído y estructurado a partir del manual del usuario.
    ========================================================================== */
 
-const PROFILE_DEFAULTS = {
+let PROFILE_DEFAULTS = {
   name: "Atleta",
   startDate: "2026-08-24",          // Lunes de la semana 1 (editable en Ajustes). Las semanas van de lunes a domingo.
   raceDate: "2027-01-24",           // Mitja Marató de Granollers
@@ -15,7 +15,7 @@ const PROFILE_DEFAULTS = {
   notificationsEnabled: false
 };
 
-const HR_ZONES = [
+let HR_ZONES = [
   { key: "z1", label: "Z1 · Muy suave", color: "#6B7784", range: "<115 ppm", min: null, max: 115 },
   { key: "z2", label: "Z2 · Aeróbico (base)", color: "#3E7BFA", range: "115–126 ppm", min: 115, max: 126 },
   { key: "z3", label: "Z3 · Tempo", color: "#22C55E", range: "127–137 ppm", min: 127, max: 137 },
@@ -24,12 +24,12 @@ const HR_ZONES = [
 ];
 
 // Hitos fijos del calendario real (no dependen de la semana calculada, son fechas de verdad)
-const MILESTONES = [
+let MILESTONES = [
   { date: "2027-01-24", icon: "🏁", label: "Mitja Marató de Granollers", desc: "Objetivo: sub 1h 43min a 4:45–4:50 min/km, pesando 75.5 kg." },
   { date: "2027-06-24", icon: "🏆", label: "Objetivo final (Sant Joan)", desc: "Cuerpo definido: 71–72 kg, abdominales visibles." }
 ];
 
-const SUPPLEMENTS = [
+let SUPPLEMENTS = [
   { id: "multi", name: "Multivitamínico", brand: "Supradyn Activo / Multicentrum Hombre", when: "Cada mañana con el desayuno", icon: "sun" },
   { id: "creatina", name: "Creatina monohidrato", brand: "HSN Raw Monohidrato (Creapure)", when: "5 g en agua, en días de gimnasio / calidad / tirada", icon: "bolt" },
   { id: "proteina", name: "Proteína Whey Isolate", brand: "HSN Evowhey Isolate 2.0 / Myprotein Impact Whey Isolate", when: "1 cacito post-entreno (pesas/HIIT)", icon: "shake" },
@@ -40,7 +40,7 @@ const SUPPLEMENTS = [
    BLOQUE 1 — Camino a la Mitja de Granollers (semanas 1–22)
    Peso objetivo semana a semana (pesaje: sábado en ayunas)
    --------------------------------------------------------------------- */
-const WEEKLY_WEIGHTS_BLOQUE1 = [
+let WEEKLY_WEIGHTS_BLOQUE1 = [
   { week: 1, weight: 86.9 }, { week: 2, weight: 86.4 }, { week: 3, weight: 85.8 },
   { week: 4, weight: 85.3, note: "Actualizar peso en Garmin Connect" },
   { week: 5, weight: 84.7 }, { week: 6, weight: 84.2 }, { week: 7, weight: 83.6 },
@@ -93,7 +93,7 @@ function getAllWeightTargetWeeks() {
 /* ---------------------------------------------------------------------
    FASES (5 fases a lo largo de todo el plan)
    --------------------------------------------------------------------- */
-const PHASES = [
+let PHASES = [
   {
     id: 1,
     key: "fase1",
@@ -173,11 +173,11 @@ const PHASES = [
 ];
 
 // El plan tiene una duración fija — más allá de esta semana se considera completado.
-const TOTAL_PLAN_WEEKS = PHASES[PHASES.length - 1].weeks[1];
-const RACE_WEEK = PHASES.find(p => p.raceWeek)?.raceWeek || 22;
+let TOTAL_PLAN_WEEKS = PHASES[PHASES.length - 1].weeks[1];
+let RACE_WEEK = PHASES.find(p => p.raceWeek)?.raceWeek || 22;
 
 // Cada cuántas semanas conviene revisar las zonas de FC (FCR/FCM cambian con la forma física)
-const ZONE_REVIEW_INTERVAL_WEEKS = 4;
+let ZONE_REVIEW_INTERVAL_WEEKS = 4;
 function isZoneReviewWeek(weekNumber) {
   return weekNumber >= 1 && (weekNumber - 1) % ZONE_REVIEW_INTERVAL_WEEKS === 0;
 }
@@ -724,7 +724,7 @@ const WEEKLY_SCHEDULE_FASE4 = {
    DICCIONARIO DE CALORÍAS — referencia rápida (pesos en crudo/seco,
    que es como se pesan en la báscula de cocina)
    --------------------------------------------------------------------- */
-const CALORIE_DICTIONARY = {
+let CALORIE_DICTIONARY = {
   proteinas: {
     title: "🥩 Las proteínas (el tejido de tu músculo)",
     items: [
@@ -772,7 +772,7 @@ const CALORIE_DICTIONARY = {
 /* ---------------------------------------------------------------------
    FICHAS DE SUPLEMENTACIÓN (detalladas, para la pestaña de referencia)
    --------------------------------------------------------------------- */
-const SUPPLEMENT_DETAILS = [
+let SUPPLEMENT_DETAILS = [
   {
     id: "proteina",
     name: "Aislado de proteína de suero (Whey Isolate)",
