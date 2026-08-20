@@ -135,6 +135,36 @@ function confirmModal(title, desc, confirmLabel, onConfirm) {
   $("#confirmOkBtn").addEventListener("click", () => { closeModal(); onConfirm(); });
 }
 
+/* ---------------- Zonas de FC (editables) ---------------- */
+function getZones() {
+  if (state.settings.zones && state.settings.zones.length === HR_ZONES.length) return state.settings.zones;
+  return HR_ZONES.map(z => ({ ...z }));
+}
+function zoneRangeText(z) {
+  if (z.key === "z1") return `<${z.min} ppm`;
+  if (z.key === "z5") return `>${z.max} ppm`;
+  return `${z.min}–${z.max} ppm`;
+}
+function saveZones(zones) {
+  state.settings.zones = zones;
+  storeSet(STORE_KEYS.settings, state.settings);
+}
+// El plan trae los rangos de FC escritos dentro de las frases de cada entreno (ej. "Zona 2
+// (115–126 ppm)"). En vez de reescribir cada frase, sustituimos el rango por defecto por el
+// rango que el usuario tenga configurado ahora mismo, en cualquier HTML ya renderizado.
+function applyCustomZoneText(html) {
+  const zones = getZones();
+  let out = html;
+  HR_ZONES.forEach((defaultZone, i) => {
+    const current = zones[i];
+    if (!current) return;
+    const defaultStr = defaultZone.range;
+    const currentStr = zoneRangeText(current);
+    if (defaultStr !== currentStr) out = out.split(defaultStr).join(currentStr);
+  });
+  return out;
+}
+
 /* ---------------- Notificaciones ---------------- */
 function notificationsSupported() { return "Notification" in window; }
 
@@ -193,6 +223,14 @@ function maybeSendDailyReminder() {
   }
   showLocalNotification(title, body, "forja21-daily");
   localStorage.setItem(flagKey, "1");
+
+  if (isZoneReviewWeek(week) && dayKey === "mon") {
+    const zoneFlagKey = "forja21_zonecheck_w" + week;
+    if (!localStorage.getItem(zoneFlagKey)) {
+      showLocalNotification("🫀 Toca revisar tus zonas de FC", "Cada pocas semanas conviene reajustar los ppm de tus zonas en Ajustes según cómo evolucione tu forma.", "forja21-zonecheck");
+      localStorage.setItem(zoneFlagKey, "1");
+    }
+  }
 }
 
 /* ---------------- Pace helpers ---------------- */
@@ -249,6 +287,86 @@ function weightStatus(week) {
   if (Math.abs(diff) <= 0.25) return { label: "En objetivo", cls: "status-ontrack", diff };
   if (diff < 0) return { label: `${Math.abs(diff).toFixed(1)} kg por delante`, cls: "status-ahead", diff };
   return { label: `${diff.toFixed(1)} kg por detrás`, cls: "status-behind", diff };
+}
+
+/* ---------------- Estadísticas y seguimiento ---------------- */
+function computeStats() {
+  const { week } = todayInfo();
+  const elapsedWeek = Math.max(0, Math.min(week, TOTAL_PLAN_WEEKS));
+  const today = startOfDay(new Date());
+
+  // Peso
+  const weighableWeeks = Math.min(elapsedWeek, WEEKLY_WEIGHTS_BLOQUE1.length);
+  let loggedWeeks = 0, onTargetWeeks = 0, devSum = 0, devCount = 0;
+  for (let w = 1; w <= weighableWeeks; w++) {
+    const l = getWeightLog(w);
+    const t = getWeightTargetForWeek(w);
+    if (l) {
+      loggedWeeks++;
+      if (t) {
+        const diff = l.weight - t.weight;
+        devSum += diff; devCount++;
+        if (Math.abs(diff) <= 0.25) onTargetWeeks++;
+      }
+    }
+  }
+  const weightLogPct = weighableWeeks ? (loggedWeeks / weighableWeeks * 100) : 0;
+  const weightOnTargetPct = loggedWeeks ? (onTargetWeeks / loggedWeeks * 100) : null;
+  const avgWeightDev = devCount ? (devSum / devCount) : null;
+
+  // Entrenos
+  let scheduledCount = 0, completedCount = 0;
+  for (let w = 1; w <= elapsedWeek; w++) {
+    const keys = trainingDayKeysForWeek(w);
+    const dates = weekDates(w);
+    keys.forEach(k => {
+      const dObj = dates.find(x => x.key === k);
+      if (dObj && startOfDay(dObj.date) <= today) {
+        scheduledCount++;
+        if (workoutsForDate(dateKey(dObj.date)).length > 0) completedCount++;
+      }
+    });
+  }
+  const trainingPct = scheduledCount ? (completedCount / scheduledCount * 100) : null;
+
+  // Ritmo
+  const pacedSessions = state.workouts.filter(w => w.targetPace && w.deviationSec !== null && w.deviationSec !== undefined);
+  const onPaceCount = pacedSessions.filter(w => Math.abs(w.deviationSec) <= 10).length;
+  const avgPaceDev = pacedSessions.length ? Math.round(pacedSessions.reduce((s, w) => s + w.deviationSec, 0) / pacedSessions.length) : null;
+  const pacePct = pacedSessions.length ? (onPaceCount / pacedSessions.length * 100) : null;
+
+  // Suplementos
+  let suppTotalDays = 0, suppSumPct = 0;
+  for (let w = 1; w <= elapsedWeek; w++) {
+    weekDates(w).forEach(({ key, date }) => {
+      if (startOfDay(date) > today) return;
+      const wk = getWeekNumber(date);
+      if (wk < 1) return;
+      const day = getDaySchedule(wk, key);
+      if (!day || !day.supplements || !day.supplements.length) return;
+      suppTotalDays++;
+      const checks = getSuppChecks(dateKey(date));
+      suppSumPct += (checks.length / day.supplements.length);
+    });
+  }
+  const suppPct = suppTotalDays ? (suppSumPct / suppTotalDays * 100) : null;
+
+  return {
+    weightLogPct, weightOnTargetPct, avgWeightDev, loggedWeeks, weighableWeeks,
+    trainingPct, scheduledCount, completedCount,
+    pacePct, onPaceCount, pacedSessionsCount: pacedSessions.length, avgPaceDev,
+    suppPct
+  };
+}
+
+function statBarHTML(label, pct, detail, color) {
+  const p = pct === null || pct === undefined ? 0 : Math.round(pct);
+  return `
+    <div class="stat-block">
+      <div class="stat-block-head"><span>${label}</span><b>${pct === null || pct === undefined ? "—" : p + "%"}</b></div>
+      <div class="stat-block-bar"><i style="width:${p}%; background:${color || "var(--brand)"}"></i></div>
+      ${detail ? `<p class="stat-block-detail">${detail}</p>` : ""}
+    </div>`;
 }
 
 /* ---------------- Supplements ---------------- */
@@ -640,10 +758,18 @@ function renderHoy() {
   const tomorrowWeek = getWeekNumber(tomorrow);
   if (JS_DOW_TO_KEY[tomorrow.getDay()] === "sat" && tomorrowWeek >= 1 && !getWeightLog(tomorrowWeek)) {
     const t = getWeightTargetForWeek(tomorrowWeek);
-    reminderHTML = `
+    reminderHTML += `
       <div class="card" style="border-color: color-mix(in srgb, var(--z4) 40%, var(--border))">
         <div class="card-row"><span>⏰</span><h4 style="flex:1">Mañana toca báscula</h4></div>
         <p class="phase-summary" style="margin-top:6px">En ayunas, nada más levantarte. Objetivo semana ${tomorrowWeek}: <b style="color:var(--brand-2)">${t ? t.weight + " kg" : "—"}</b>.</p>
+      </div>`;
+  }
+  if (isZoneReviewWeek(week)) {
+    reminderHTML += `
+      <div class="card" style="border-color: color-mix(in srgb, var(--brand) 40%, var(--border))">
+        <div class="card-row"><span>🫀</span><h4 style="flex:1">Toca revisar tus zonas de FC</h4></div>
+        <p class="phase-summary" style="margin-top:6px">Cada ${ZONE_REVIEW_INTERVAL_WEEKS} semanas conviene reajustar los ppm de tus zonas según tu forma actual.</p>
+        <button class="btn btn-ghost btn-sm" id="goSettingsZones" style="margin-top:10px">Ajustar zonas</button>
       </div>`;
   }
 
@@ -697,7 +823,7 @@ function renderHoy() {
       </div>`;
   }
 
-  $("#view").innerHTML = html;
+  $("#view").innerHTML = applyCustomZoneText(html);
 
   if (day.isWeighDay) {
     $("#hoyWeightSave").addEventListener("click", () => {
@@ -711,6 +837,7 @@ function renderHoy() {
   if (isTrainingDay && !day.isGeneralPhase) {
     $("#logSessionBtn").addEventListener("click", () => openWorkoutForm(day, date));
   }
+  $("#goSettingsZones")?.addEventListener("click", () => { state.activeTab = "ajustes"; render(); });
 }
 
 /* ---------------- Calendario (semana + mes) ---------------- */
@@ -751,8 +878,8 @@ function renderCalendario() {
             <div class="m">${DOW_SHORT[date.getDay()]}</div>
           </div>
           <div class="week-day-mid">
-            <div class="week-day-title">${d.typeLabel} ${d.isWeighDay ? "⚖️" : ""} ${milestone ? milestone.icon : ""}</div>
-            <div class="week-day-sub">${milestone ? milestone.label : sub}</div>
+            <div class="week-day-title">${d.typeLabel} ${d.isWeighDay ? "⚖️" : ""} ${key === "mon" && isZoneReviewWeek(todayWeek) ? "🫀" : ""} ${milestone ? milestone.icon : ""}</div>
+            <div class="week-day-sub">${milestone ? milestone.label : (key === "mon" && isZoneReviewWeek(todayWeek)) ? "Revisar zonas de FC · " + sub : sub}</div>
           </div>
           <div class="week-day-chevron"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         </div>`;
@@ -762,7 +889,7 @@ function renderCalendario() {
     html += renderMonthGrid();
   }
 
-  $("#view").innerHTML = html;
+  $("#view").innerHTML = applyCustomZoneText(html);
   bindCalendarToggle();
 
   $$(".week-day[data-date]").forEach(el => {
@@ -812,10 +939,12 @@ function renderMonthGrid() {
     const isToday = startOfDay(d).getTime() === today.getTime();
     const sched = getScheduleForDate(d);
     const milestone = milestoneForDate(d);
+    const dWeek = getWeekNumber(d);
+    const isZoneReviewMon = JS_DOW_TO_KEY[d.getDay()] === "mon" && isZoneReviewWeek(dWeek);
     html += `
-      <div class="month-cell ${inMonth ? "" : "out"} ${isToday ? "today" : ""} ${milestone ? "milestone" : ""}" data-date="${dateKey(d)}" title="${milestone ? milestone.label : ""}">
+      <div class="month-cell ${inMonth ? "" : "out"} ${isToday ? "today" : ""} ${milestone ? "milestone" : ""}" data-date="${dateKey(d)}" title="${milestone ? milestone.label : isZoneReviewMon ? "Revisar zonas de FC" : ""}">
         <span class="month-cell-num">${d.getDate()}</span>
-        ${milestone ? `<span class="month-cell-icon">${milestone.icon}</span>` : sched?.isWeighDay ? `<span class="month-cell-icon">⚖️</span>` : sched ? `<span class="month-cell-dot" style="background:${dayTypeColor(sched.type)}"></span>` : ""}
+        ${milestone ? `<span class="month-cell-icon">${milestone.icon}</span>` : isZoneReviewMon ? `<span class="month-cell-icon">🫀</span>` : sched?.isWeighDay ? `<span class="month-cell-icon">⚖️</span>` : sched ? `<span class="month-cell-dot" style="background:${dayTypeColor(sched.type)}"></span>` : ""}
       </div>`;
   }
   html += `</div>
@@ -826,6 +955,7 @@ function renderMonthGrid() {
       <span class="legend-item">⚖️ Pesaje</span>
       <span class="legend-item">🏁 Carrera</span>
       <span class="legend-item">🏆 Objetivo final</span>
+      <span class="legend-item">🫀 Revisar zonas FC</span>
     </div>`;
   return html;
 }
@@ -851,7 +981,7 @@ function openDayModal(dateObj) {
   const milestoneBanner = milestone ? `<div class="card" style="border-color: color-mix(in srgb, var(--z4) 45%, var(--border))"><div class="card-row"><span style="font-size:20px">${milestone.icon}</span><h4 style="flex:1">${milestone.label}</h4></div><p class="phase-summary" style="margin-top:6px">${milestone.desc}</p></div>` : "";
   openModal(
     `<div class="modal-title">${d.label} · ${fmtDateShort(dateObj)}</div><div class="modal-desc">Semana ${week} · ${d.typeLabel}${d.isWeighDay ? " · ⚖️ pesaje" : ""}</div>`,
-    `<div>${milestoneBanner}${fullDayHTML(d, dateObj)}</div>`
+    applyCustomZoneText(`<div>${milestoneBanner}${fullDayHTML(d, dateObj)}</div>`)
   );
   bindSuppHandlers();
   const trainKeys = ["gym", "quality", "long", "race"];
@@ -981,7 +1111,18 @@ function renderPeso() {
 
   html += `</div>`;
 
-  $("#view").innerHTML = html;
+  const stats = computeStats();
+  html += `
+    <div class="section-title">Estadísticas y seguimiento</div>
+    <div class="card">
+      ${statBarHTML("Semanas pesadas", stats.weightLogPct, `${stats.loggedWeeks} de ${stats.weighableWeeks} semanas con peso registrado`, "var(--brand)")}
+      ${statBarHTML("Peso en objetivo", stats.weightOnTargetPct, stats.avgWeightDev !== null ? `Desviación media: ${stats.avgWeightDev >= 0 ? "+" : ""}${stats.avgWeightDev.toFixed(2)} kg respecto al objetivo semanal` : "Aún sin pesajes suficientes", "var(--z3)")}
+      ${statBarHTML("Entrenos completados", stats.trainingPct, `${stats.completedCount} de ${stats.scheduledCount} sesiones programadas hasta hoy`, "var(--z4)")}
+      ${statBarHTML("Ritmo en objetivo", stats.pacePct, stats.pacedSessionsCount ? `${stats.onPaceCount} de ${stats.pacedSessionsCount} sesiones dentro de ±10s/km · desviación media ${formatPaceDiff(stats.avgPaceDev)}` : "Registra sesiones con ritmo objetivo para verlo aquí", "var(--z5)")}
+      ${statBarHTML("Suplementos tomados", stats.suppPct, "Media diaria de suplementos marcados sobre los programados", "var(--brand-2)")}
+    </div>`;
+
+  $("#view").innerHTML = applyCustomZoneText(html);
 
   if (week >= 1) {
     $("#pesoSave").addEventListener("click", () => {
@@ -1007,13 +1148,24 @@ function renderAjustes() {
 
     <div class="section-title">Zonas de frecuencia cardíaca</div>
     <div class="card">
-      ${HR_ZONES.map(z => `
-        <div class="exercise">
-          <div class="exercise-name"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${z.color};margin-right:8px"></span>${z.label}</div>
-          <div class="exercise-set" style="color:${z.color}">${z.range}</div>
-        </div>`).join("")}
+      <p class="phase-summary" style="margin-bottom:10px">Ajusta los ppm de cada zona cuando revises tu forma física — se actualizan en todo el plan (entrenos, calendario y avisos).</p>
+      <div id="zoneEditor">
+        ${getZones().map((z, i) => `
+          <div class="zone-edit-row">
+            <span class="dot" style="width:9px;height:9px;border-radius:50%;background:${z.color};flex:none"></span>
+            <span class="zone-edit-label">${z.label}</span>
+            ${z.key === "z1" ? `
+              <span class="zone-edit-inputs"><span>&lt;</span><input type="number" class="zone-input" data-idx="${i}" data-field="max" value="${z.max}" /></span>
+            ` : z.key === "z5" ? `
+              <span class="zone-edit-inputs"><span>&gt;</span><input type="number" class="zone-input" data-idx="${i}" data-field="min" value="${z.min}" /></span>
+            ` : `
+              <span class="zone-edit-inputs"><input type="number" class="zone-input" data-idx="${i}" data-field="min" value="${z.min}" /><span>–</span><input type="number" class="zone-input" data-idx="${i}" data-field="max" value="${z.max}" /></span>
+            `}
+          </div>`).join("")}
+      </div>
+      <button class="btn btn-primary" id="saveZones" style="margin-top:12px">Guardar zonas</button>
       <div class="divider"></div>
-      <p class="phase-summary">FC reposo ${s.fcr} ppm · FC máxima ${s.fcm} ppm · Techo Zona 2: ${s.z2max} ppm</p>
+      <p class="phase-summary">FC reposo ${s.fcr} ppm · FC máxima ${s.fcm} ppm</p>
     </div>
 
     <div class="section-title">Suplementación de referencia</div>
@@ -1081,6 +1233,24 @@ function renderAjustes() {
     state.settings.startWeight = parseFloat($("#setStartWeight").value) || state.settings.startWeight;
     storeSet(STORE_KEYS.settings, state.settings);
     showToast("Ajustes guardados" + (pickedRaw && pickedRaw !== state.settings.startDate ? " (ajustado al lunes de esa semana)" : ""));
+    render();
+  });
+
+  $("#saveZones")?.addEventListener("click", () => {
+    const zones = getZones().map(z => ({ ...z }));
+    $$(".zone-input").forEach(inp => {
+      const idx = parseInt(inp.dataset.idx, 10);
+      const field = inp.dataset.field;
+      const v = parseInt(inp.value, 10);
+      if (!isNaN(v)) zones[idx][field] = v;
+    });
+    // valida que cada zona tenga sentido (min < max) y que estén en orden ascendente
+    for (let i = 0; i < zones.length; i++) {
+      const z = zones[i];
+      if (z.min != null && z.max != null && z.min >= z.max) { showToast("Cada zona necesita un mínimo menor que el máximo"); return; }
+    }
+    saveZones(zones);
+    showToast("Zonas guardadas");
     render();
   });
 
