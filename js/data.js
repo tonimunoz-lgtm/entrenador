@@ -190,11 +190,13 @@ function isZoneReviewWeek(weekNumber) {
 const MEALS_GREEN = { // Lunes, Miércoles, Domingo
   label: "Menú limpio (bajo en hidratos)",
   zoneColor: "#22C55E",
+  totalKcal: 945,
+  macros: { protein: 95, carbs: 60, fat: 30 },
   items: [
-    { meal: "Desayuno", text: "Tortilla de 1 huevo entero + 2 claras. Café solo." },
-    { meal: "Comida", text: "200 g de pechuga de pollo a la plancha + 250 g de brócoli al vapor + 40 g (en seco) de arroz integral." },
-    { meal: "Merienda", text: "1 yogur griego ligero (0%) + 20 g de nueces naturales." },
-    { meal: "Cena", text: "Crema de calabacín y puerro (sin nata) + 150 g de merluza al horno con limón." }
+    { meal: "Desayuno", text: "Tortilla de 1 huevo entero + 2 claras. Café solo.", kcal: 115 },
+    { meal: "Comida", text: "200 g de pechuga de pollo a la plancha + 250 g de brócoli al vapor + 40 g (en seco) de arroz integral.", kcal: 455 },
+    { meal: "Merienda", text: "1 yogur griego ligero (0%) + 20 g de nueces naturales.", kcal: 180 },
+    { meal: "Cena", text: "Crema de calabacín y puerro (sin nata) + 150 g de merluza al horno con limón.", kcal: 195 }
   ]
 };
 
@@ -208,30 +210,35 @@ const MEALS_YELLOW = { // Martes, Jueves — gimnasio de fuerza
     { meal: "Comida", text: "200 g de lomo de cerdo magro (o ternera) + 60 g (en seco) de pasta integral o quinoa + ensalada grande. Toma los 5 g de Creatina en agua.", kcal: 620 },
     { meal: "Merienda (1h antes de entrenar)", text: "1 plátano + 3 lonchas de pavo. Café solo.", kcal: 190 },
     { meal: "Post-entreno", text: "1 batido de proteína Whey Isolate con agua fría, justo al acabar las pesas.", kcal: 110 },
-    { meal: "Cena", text: "Revuelto de 3 claras y 1 huevo entero con champiñones (o gambas) + 1 tomate aliñado.", kcal: 310 }
+    { meal: "Cena", text: "Revuelto de 3 claras y 1 huevo entero con champiñones (o gambas) + 1 tomate aliñado.", kcal: 310 },
+    { meal: "Extra del día", text: "Aceite de cocinar, el Omega 3 de la noche y otros extras sueltos.", kcal: 330 }
   ]
 };
 
 const MEALS_ORANGE = { // Viernes — carrera de calidad
   label: "Menú de carga rápida",
   zoneColor: "#FB923C",
+  totalKcal: 995,
+  macros: { protein: 80, carbs: 115, fat: 25 },
   items: [
-    { meal: "Desayuno", text: "1 tostada integral con tomate triturado y 50 g de requesón. Café solo." },
-    { meal: "Comida", text: "200 g de pechuga de pavo + 250 g de patata cocida + espárragos. Toma los 5 g de Creatina." },
-    { meal: "Merienda (1h antes de correr)", text: "2 tortitas de arroz con una cucharada de crema de cacahuete pura." },
-    { meal: "Cena", text: "150 g de sepia (o emperador) a la plancha con ajo y perejil + caldo de verduras limpio." }
+    { meal: "Desayuno", text: "1 tostada integral con tomate triturado y 50 g de requesón. Café solo.", kcal: 165 },
+    { meal: "Comida", text: "200 g de pechuga de pavo + 250 g de patata cocida + espárragos. Toma los 5 g de Creatina.", kcal: 460 },
+    { meal: "Merienda (1h antes de correr)", text: "2 tortitas de arroz con una cucharada de crema de cacahuete pura.", kcal: 195 },
+    { meal: "Cena", text: "150 g de sepia (o emperador) a la plancha con ajo y perejil + caldo de verduras limpio.", kcal: 175 }
   ]
 };
 
 const MEALS_LONGRUN = { // Sábado — tirada larga
   label: "Menú de la tirada larga",
   zoneColor: "#EF4444",
+  totalKcal: 1000,
+  macros: { protein: 85, carbs: 100, fat: 30 },
   items: [
-    { meal: "Pre-carrera (60 min antes)", text: "1 café solo cargado + 1 plátano (o tostada con miel)." },
-    { meal: "Durante", text: "Agua con una pastilla de electrolitos (Isostar o 226ers), a partir de los 60 min." },
-    { meal: "Comida (post-tirada)", text: "100 g (en seco) de arroz o pasta integral + 200 g de salmón a la plancha + verduras. Toma los 5 g de Creatina." },
-    { meal: "Merienda", text: "200 g de queso fresco batido 0% con arándanos." },
-    { meal: "Cena", text: "Tortilla francesa de 2 huevos con una lata de atún al natural." }
+    { meal: "Pre-carrera (60 min antes)", text: "1 café solo cargado + 1 plátano (o tostada con miel).", kcal: 110 },
+    { meal: "Durante", text: "Agua con una pastilla de electrolitos (Isostar o 226ers), a partir de los 60 min.", kcal: 0 },
+    { meal: "Comida (post-tirada)", text: "100 g (en seco) de arroz o pasta integral + 200 g de salmón a la plancha + verduras. Toma los 5 g de Creatina.", kcal: 490 },
+    { meal: "Merienda", text: "200 g de queso fresco batido 0% con arándanos.", kcal: 150 },
+    { meal: "Cena", text: "Tortilla francesa de 2 huevos con una lata de atún al natural.", kcal: 250 }
   ]
 };
 
@@ -350,12 +357,14 @@ const MEALS_PRE_RACE = {
 const MEALS_RACE_DAY = {
   label: "Día de carrera",
   zoneColor: "#FFD84D",
+  totalKcal: 1550,
+  macros: { protein: 95, carbs: 230, fat: 30 },
   items: [
-    { meal: "Desayuno (3h antes)", text: "Tostadas con miel o mermelada + un plátano + café solo. Nada nuevo ni raro — lo de siempre en tus tiradas largas." },
-    { meal: "Pre-salida (30–45 min antes)", text: "Un gel o media barrita energética + agua." },
-    { meal: "Durante la carrera", text: "Un gel cada 45 min aprox. + agua o bebida isotónica en los avituallamientos." },
-    { meal: "Justo al terminar", text: "El batido de proteína Whey Isolate + un plátano, dentro de los primeros 30 minutos." },
-    { meal: "Comida de recuperación", text: "Plato copioso con hidratos y proteína — pasta o arroz con pollo o salmón. Hoy toca disfrutar la comida sin restricción." }
+    { meal: "Desayuno (3h antes)", text: "Tostadas con miel o mermelada + un plátano + café solo. Nada nuevo ni raro — lo de siempre en tus tiradas largas.", kcal: 330 },
+    { meal: "Pre-salida (30–45 min antes)", text: "Un gel o media barrita energética + agua.", kcal: 100 },
+    { meal: "Durante la carrera", text: "Un gel cada 45 min aprox. + agua o bebida isotónica en los avituallamientos.", kcal: 200 },
+    { meal: "Justo al terminar", text: "El batido de proteína Whey Isolate + un plátano, dentro de los primeros 30 minutos.", kcal: 220 },
+    { meal: "Comida de recuperación", text: "Plato copioso con hidratos y proteína — pasta o arroz con pollo o salmón. Hoy toca disfrutar la comida sin restricción.", kcal: 700 }
   ]
 };
 
@@ -434,41 +443,51 @@ const MEALS_FASE3_MON = { // Lunes, Martes — días de pesos fuertes
     { meal: "Comida", text: "220 g de pechuga de pavo a la plancha + 90 g (en seco) de arroz integral + un plato grande de verduras salteadas (calabacín, champiñones) con aceite de oliva.", kcal: 740 },
     { meal: "Merienda (pre-entreno, 17:00)", text: "Un bol con 60 g de copos de avena mezclados con leche desnatada y un cacito de proteína Whey Isolate.", kcal: 430 },
     { meal: "Post-entreno", text: "1 plátano maduro inmediatamente al terminar las pesas.", kcal: 110 },
-    { meal: "Cena", text: "200 g de filete de salmón al horno + puré de calabaza con un chorrito de aceite de oliva.", kcal: 450 }
+    { meal: "Cena", text: "200 g de filete de salmón al horno + puré de calabaza con un chorrito de aceite de oliva.", kcal: 450 },
+    { meal: "Extra del día", text: "Aceites de cocinar, la Creatina y el Omega 3.", kcal: 260 }
   ]
 };
 
 const MEALS_FASE3_TUE = { // Martes, Jueves (mismo menú)
-  label: "Menú de hipertrofia (~2.400 kcal)",
+  label: "Menú de hipertrofia",
   zoneColor: "#F5B400",
+  totalKcal: 2350,
+  macros: { protein: 175, carbs: 235, fat: 65 },
   items: [
-    { meal: "Desayuno", text: "Mismo desayuno del huevo y el aguacate." },
-    { meal: "Comida", text: "220 g de filete de ternera magra + 90 g (en seco) de pasta integral + ensalada variada con tomate. Toma la Creatina aquí." },
-    { meal: "Merienda", text: "El mismo bol de avena con leche y proteína." },
-    { meal: "Post-entreno", text: "1 plátano maduro." },
-    { meal: "Cena", text: "200 g de dorada o lubina al horno con patatas panadera y cebolla." }
+    { meal: "Desayuno", text: "Mismo desayuno del huevo y el aguacate.", kcal: 490 },
+    { meal: "Comida", text: "220 g de filete de ternera magra + 90 g (en seco) de pasta integral + ensalada variada con tomate. Toma la Creatina aquí.", kcal: 660 },
+    { meal: "Merienda", text: "El mismo bol de avena con leche y proteína.", kcal: 430 },
+    { meal: "Post-entreno", text: "1 plátano maduro.", kcal: 110 },
+    { meal: "Cena", text: "200 g de dorada o lubina al horno con patatas panadera y cebolla.", kcal: 400 },
+    { meal: "Extra del día", text: "Aceites de cocinar y el Omega 3.", kcal: 260 }
   ]
 };
 
 const MEALS_FASE3_WED = { // Miércoles, Domingo
   label: "Menú de mantenimiento energético",
   zoneColor: "#22C55E",
+  totalKcal: 1780,
+  macros: { protein: 140, carbs: 175, fat: 55 },
   items: [
-    { meal: "Desayuno", text: "Tortilla de 2 huevos enteros + 2 claras + 1 tostada integral con miel y queso fresco." },
-    { meal: "Comida", text: "220 g de pechuga de pollo + 250 g de patata hervida + un plato grande de brócoli al vapor." },
-    { meal: "Merienda", text: "200 g de queso fresco batido 0% con un puñado de nueces y un toque de canela." },
-    { meal: "Cena", text: "Tortilla francesa de 3 huevos con dos latas de atún al natural + crema de verduras limpia." }
+    { meal: "Desayuno", text: "Tortilla de 2 huevos enteros + 2 claras + 1 tostada integral con miel y queso fresco.", kcal: 380 },
+    { meal: "Comida", text: "220 g de pechuga de pollo + 250 g de patata hervida + un plato grande de brócoli al vapor.", kcal: 580 },
+    { meal: "Merienda", text: "200 g de queso fresco batido 0% con un puñado de nueces y un toque de canela.", kcal: 250 },
+    { meal: "Cena", text: "Tortilla francesa de 3 huevos con dos latas de atún al natural + crema de verduras limpia.", kcal: 480 },
+    { meal: "Extra del día", text: "Aceites de cocinar y el Omega 3.", kcal: 90 }
   ]
 };
 
 const MEALS_FASE3_SAT = { // Sábado — carga limpia de fin de semana
   label: "Carga limpia de fin de semana",
   zoneColor: "#FFD84D",
+  totalKcal: 1700,
+  macros: { protein: 115, carbs: 195, fat: 45 },
   items: [
-    { meal: "Desayuno", text: "Tortilla francesa de 2 huevos enteros con 1 tostada integral con aceite de oliva." },
-    { meal: "Comida", text: "Un buen plato de pasta integral (90 g en seco) con carne picada de pollo o ternera magra y tomate natural." },
-    { meal: "Merienda", text: "200 g de yogur griego 0% con arándanos y un puñado de almendras." },
-    { meal: "Cena", text: "200 g de merluza o bacalao a la plancha con una patata hervida pequeña y espárragos verdes." }
+    { meal: "Desayuno", text: "Tortilla francesa de 2 huevos enteros con 1 tostada integral con aceite de oliva.", kcal: 280 },
+    { meal: "Comida", text: "Un buen plato de pasta integral (90 g en seco) con carne picada de pollo o ternera magra y tomate natural.", kcal: 570 },
+    { meal: "Merienda", text: "200 g de yogur griego 0% con arándanos y un puñado de almendras.", kcal: 300 },
+    { meal: "Cena", text: "200 g de merluza o bacalao a la plancha con una patata hervida pequeña y espárragos verdes.", kcal: 300 },
+    { meal: "Extra del día", text: "Aceites de cocinar, la Creatina y el Omega 3.", kcal: 250 }
   ]
 };
 
@@ -570,11 +589,14 @@ const FASE4_RULES_NOTE = "Las 3 normas innegociables de esta fase: cero hidratos
 const MEALS_FASE4_CLEAN = { // Lunes, Miércoles, Domingo
   label: "Menú de vaciado (bajo en hidratos)",
   zoneColor: "#22C55E",
+  totalKcal: 940,
+  macros: { protein: 100, carbs: 55, fat: 40 },
   items: [
-    { meal: "Desayuno", text: "Tortilla de 3 claras de huevo + 1 café solo (sin tostada)." },
-    { meal: "Comida", text: "200 g de pechuga de pollo a la plancha + 300 g de brócoli al vapor + 30 g (en seco) de arroz integral." },
-    { meal: "Merienda (17:00)", text: "40 g de nueces naturales + 1 café solo (sin hidratos)." },
-    { meal: "Cena", text: "200 g de lluç (merluza) a la plancha con un raig de limón + ensalada de espinacas frescos." }
+    { meal: "Desayuno", text: "Tortilla de 3 claras de huevo + 1 café solo (sin tostada).", kcal: 45 },
+    { meal: "Comida", text: "200 g de pechuga de pollo a la plancha + 300 g de brócoli al vapor + 30 g (en seco) de arroz integral.", kcal: 425 },
+    { meal: "Merienda (17:00)", text: "40 g de nueces naturales + 1 café solo (sin hidratos).", kcal: 245 },
+    { meal: "Cena", text: "200 g de lluç (merluza) a la plancha con un raig de limón + ensalada de espinacas frescos.", kcal: 165 },
+    { meal: "Extra del día", text: "Aceites de cocinar y el Omega 3.", kcal: 60 }
   ]
 };
 
@@ -588,30 +610,37 @@ const MEALS_FASE4_GYM = { // Martes, Jueves — gimnasio pesado + HIIT
     { meal: "Comida", text: "200 g de ternera magra + 50 g (en seco) de pasta integral + ensalada verde.", kcal: 560 },
     { meal: "Merienda (16:30, 1h antes del gimnasio)", text: "40 g de almendras naturales + 1 café solo.", kcal: 260 },
     { meal: "Post-entreno", text: "Tu batido de proteína Whey Isolate con agua fría.", kcal: 110 },
-    { meal: "Cena de máxima definición", text: "Un pote entero de claras de huevo (en tortilla o revuelto) con espinacas frescos.", kcal: 190 }
+    { meal: "Cena de máxima definición", text: "Un pote entero de claras de huevo (en tortilla o revuelto) con espinacas frescos.", kcal: 190 },
+    { meal: "Extra del día", text: "La Creatina y el Omega 3.", kcal: 320 }
   ]
 };
 
 const MEALS_FASE4_FRI = { // Viernes — brazos/core + running Z2 corto
   label: "Menú de brazos y running suave",
   zoneColor: "#FB923C",
+  totalKcal: 1220,
+  macros: { protein: 140, carbs: 105, fat: 40 },
   items: [
-    { meal: "Desayuno", text: "1 tostada integral con tomate triturado y 50 g de requesón desnatado + café solo." },
-    { meal: "Comida", text: "200 g de pavo + 200 g de patata al horno + espárragos verdes." },
-    { meal: "Merienda (16:30)", text: "40 g de nueces naturales + 1 café solo." },
-    { meal: "Post-running", text: "Tu batido de proteína Whey Isolate." },
-    { meal: "Cena de máxima definición", text: "200 g de lenguado o rape a la plancha + 8-10 espárragos verdes a la plancha." }
+    { meal: "Desayuno", text: "1 tostada integral con tomate triturado y 50 g de requesón desnatado + café solo.", kcal: 155 },
+    { meal: "Comida", text: "200 g de pavo + 200 g de patata al horno + espárragos verdes.", kcal: 440 },
+    { meal: "Merienda (16:30)", text: "40 g de nueces naturales + 1 café solo.", kcal: 245 },
+    { meal: "Post-running", text: "Tu batido de proteína Whey Isolate.", kcal: 110 },
+    { meal: "Cena de máxima definición", text: "200 g de lenguado o rape a la plancha + 8-10 espárragos verdes a la plancha.", kcal: 170 },
+    { meal: "Extra del día", text: "La Creatina y el Omega 3.", kcal: 100 }
   ]
 };
 
 const MEALS_FASE4_SAT = { // Sábado — cardio quemador exterior + pesaje
   label: "Menú del cardio quemador",
   zoneColor: "#FFD84D",
+  totalKcal: 965,
+  macros: { protein: 105, carbs: 100, fat: 35 },
   items: [
-    { meal: "Pre-running (en ayunas)", text: "1 café solo grande. Sin sólidos." },
-    { meal: "Comida (post-carrera)", text: "200 g de salmón a la plancha + un plato gigante de ensalada verde variada + 40 g (en seco) de arroz integral." },
-    { meal: "Merienda", text: "200 g de queso fresco batido 0% con un puñado de arándanos." },
-    { meal: "Cena", text: "Tortilla francesa de 2 huevos enteros con una lata de atún al natural." }
+    { meal: "Pre-running (en ayunas)", text: "1 café solo grande. Sin sólidos.", kcal: 5 },
+    { meal: "Comida (post-carrera)", text: "200 g de salmón a la plancha + un plato gigante de ensalada verde variada + 40 g (en seco) de arroz integral.", kcal: 545 },
+    { meal: "Merienda", text: "200 g de queso fresco batido 0% con un puñado de arándanos.", kcal: 150 },
+    { meal: "Cena", text: "Tortilla francesa de 2 huevos enteros con una lata de atún al natural.", kcal: 250 },
+    { meal: "Extra del día", text: "La Creatina y el Omega 3.", kcal: 15 }
   ]
 };
 
@@ -749,30 +778,39 @@ const SUPPLEMENT_DETAILS = [
     name: "Aislado de proteína de suero (Whey Isolate)",
     brand: "HSN Evowhey Isolate 2.0 · Myprotein Impact Whey Isolate",
     dose: "1 cacito (30 g de producto, ≈26 g de proteína pura)",
-    fn: "Bloquea el catabolismo muscular provocado por la pérdida rápida de peso: aseguras perder grasa de la cintura y no músculo de espalda o brazos."
+    fn: "Bloquea el catabolismo muscular provocado por la pérdida rápida de peso: aseguras perder grasa de la cintura y no músculo de espalda o brazos.",
+    kcal: 110,
+    kcalNote: "Ya contabilizadas en el post-entreno de cada día."
   },
   {
     id: "creatina",
     name: "Monohidrato de creatina",
     brand: "HSN Raw Monohidrato de Creatina · Nutrisport Creatina (siempre con sello Creapure)",
     dose: "5 g diarios (1 cacito raso), mezclado en agua o con la comida",
-    fn: "Hidratación celular interna. Protección para cadera, tendón de Aquiles y fascia plantar frente al aumento de kilómetros."
+    fn: "Hidratación celular interna. Protección para cadera, tendón de Aquiles y fascia plantar frente al aumento de kilómetros.",
+    kcal: 0,
+    kcalNote: "Prácticamente sin calorías."
   },
   {
     id: "omega3",
     name: "Omega 3 de alta concentración",
     brand: "EnerZona Omega 3 RX · Solgar Omega 3 Alta Concentración",
     dose: "2 cápsulas junto con la cena",
-    fn: "Antiinflamatorio natural enfocado a reducir rigidez y dolor cervical y de espalda alta al dormir."
+    fn: "Antiinflamatorio natural enfocado a reducir rigidez y dolor cervical y de espalda alta al dormir.",
+    kcal: 10,
+    kcalNote: "Grasa Omega 3 — ya incluidas en el \"extra del día\" de cada menú."
   },
   {
     id: "multi",
     name: "Multivitamínico completo",
     brand: "Supradyn Activo · Multicentrum Hombre",
     dose: "1 comprimido cada mañana con el desayuno",
-    fn: "Magnesio y vitamina D3 para reducir el cortisol, mejorar el sueño y sostener el metabolismo energético."
+    fn: "Magnesio y vitamina D3 para reducir el cortisol, mejorar el sueño y sostener el metabolismo energético.",
+    kcal: 0,
+    kcalNote: "Sin calorías."
   }
 ];
+
 
 /* ---------------------------------------------------------------------
    Resolución de textos que dependían de "semana 1-4 / 5-8" — ahora se
