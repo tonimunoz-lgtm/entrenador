@@ -66,26 +66,19 @@ const CloudSync = {
     if (this.user !== null) cb(this.user); // por si ya hay sesión al suscribirse
   },
 
-  async signInWithGoogle() {
+  async signUpWithEmail(email, password) {
     if (!FIREBASE_ENABLED) return;
-    const provider = new firebase.auth.GoogleAuthProvider();
-    try {
-      await fbAuth.signInWithPopup(provider);
-    } catch (e) {
-      console.error("Forja21 · Firebase sign-in error:", e.code, e.message);
-      if (e.code === "auth/unauthorized-domain") {
-        // Mensaje claro para el caso más común al desplegar en un dominio nuevo (Vercel).
-        throw new Error("Este dominio no está autorizado en Firebase. Añádelo en Authentication → Settings → Authorized domains.");
-      }
-      // Cualquier otro fallo de popup (bloqueado, no soportado, cerrado, cookies de terceros
-      // bloqueadas en el navegador del móvil...) → probamos con redirección, más fiable en PWA.
-      try {
-        await fbAuth.signInWithRedirect(provider);
-      } catch (e2) {
-        console.error("Forja21 · Firebase redirect error:", e2.code, e2.message);
-        throw e2;
-      }
-    }
+    await fbAuth.createUserWithEmailAndPassword(email, password);
+  },
+
+  async signInWithEmail(email, password) {
+    if (!FIREBASE_ENABLED) return;
+    await fbAuth.signInWithEmailAndPassword(email, password);
+  },
+
+  async resetPassword(email) {
+    if (!FIREBASE_ENABLED) return;
+    await fbAuth.sendPasswordResetEmail(email);
   },
 
   async signOutUser() {
