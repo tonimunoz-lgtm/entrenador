@@ -103,7 +103,8 @@ const PHASES = [
     dateLabel: "Agosto — Octubre 2026",
     weightFrom: 87.5,
     weightTo: 83.1,
-    kcal: "1.800 – 1.900 kcal",
+    kcal: "1.850 – 1.900 kcal",
+    macroFocus: "Proteína alta, hidrato moderado/bajo",
     color: "#3E7BFA",
     summary: "Adaptación articular y control estricto de Zona 2 para evitar fascitis y dolor de cadera. Déficit calórico moderado con recorte de hidratos en días de descanso.",
     focus: ["Control estricto de Zona 2", "Fuerza general 2x/semana", "Caminar-Correr progresivo los sábados"]
@@ -117,7 +118,8 @@ const PHASES = [
     dateLabel: "Octubre — Noviembre 2026",
     weightFrom: 83.1,
     weightTo: 80.3,
-    kcal: "1.800 – 1.900 kcal",
+    kcal: "1.850 – 1.900 kcal",
+    macroFocus: "Proteína alta, hidrato moderado/bajo",
     color: "#2DD4BF",
     summary: "Se eliminan los tramos caminando de los sábados: los rodajes pasan a ser continuos, de 14 a 16 km, en Zona 2 pura. Se mantiene la estructura nutricional, subiendo el agua a 3,5 L/día.",
     focus: ["Rodajes continuos sin caminar", "14–16 km en Zona 2 pura", "Agua 3,5 L/día"]
@@ -131,7 +133,8 @@ const PHASES = [
     dateLabel: "Noviembre 2026 — Enero 2027",
     weightFrom: 80.3,
     weightTo: 75.5,
-    kcal: "≈2.100 kcal días de calidad · ≈1.700 kcal días de descanso",
+    kcal: "2.100 kcal días de calidad · 1.750 kcal días de descanso",
+    macroFocus: "Ciclado de hidratos (carga para las series)",
     color: "#8B5CF6",
     summary: "Objetivo: clavar el ritmo de carrera de 4:45–4:50 min/km. Ciclado estricto de hidratos, potencia en el gimnasio y series largas de umbral los viernes.",
     focus: ["Series de umbral (3.000 m) los viernes", "Sentadillas explosivas para la subida a La Garriga", "Tirada larga con bloques de ritmo", "Semana 22: ¡carrera!"],
@@ -146,7 +149,8 @@ const PHASES = [
     dateLabel: "Febrero — Abril 2027",
     weightFrom: 75.5,
     weightTo: 78.5,
-    kcal: "≈2.400 – 2.500 kcal (superávit ligero)",
+    kcal: "2.450 – 2.500 kcal",
+    macroFocus: "Superávit neto. Carbohidratos altos",
     color: "#FB923C",
     summary: "Subida controlada de músculo neto (~300 g/semana): 4 días de gimnasio de hipertrofia (8–10 repeticiones), running regenerativo en Zona 2, y vacío abdominal cada mañana en ayunas para mantener la cintura estrecha mientras ganas volumen.",
     focus: ["Hipertrofia 8–10 repeticiones", "Vacío abdominal diario en ayunas", "Plátano post-entreno obligatorio", "Arroz y pasta se mantienen al mediodía"]
@@ -160,7 +164,8 @@ const PHASES = [
     dateLabel: "Mayo — Junio 2027",
     weightFrom: 78.5,
     weightTo: 71.5,
-    kcal: "≈1.600 – 1.700 kcal",
+    kcal: "1.650 – 1.700 kcal",
+    macroFocus: "Restricción estricta. Hidratos cero por la tarde",
     color: "#EC4899",
     summary: "Bajada definitiva hasta 71–72 kg reales. Corte de hidratos a partir de las 16:00, agua a 4 L/día y HIIT en cinta tras las pesas pesadas para máxima definición.",
     focus: ["Hidratos solo en desayuno y comida", "HIIT post-pesas (10x30s Z5 + 1' caminando)", "Agua 4 L/día", "Cena clínica de definición"]
@@ -196,12 +201,14 @@ const MEALS_GREEN = { // Lunes, Miércoles, Domingo
 const MEALS_YELLOW = { // Martes, Jueves — gimnasio de fuerza
   label: "Menú de energía muscular",
   zoneColor: "#F5B400",
+  totalKcal: 1880,
+  macros: { protein: 155, carbs: 160, fat: 55 },
   items: [
-    { meal: "Desayuno", text: "40 g de copos de avena cocidos con agua + 1 manzana + canela. Café solo." },
-    { meal: "Comida", text: "200 g de lomo de cerdo magro (o ternera) + 60 g (en seco) de pasta integral o quinoa + ensalada grande. Toma los 5 g de Creatina en agua." },
-    { meal: "Merienda (1h antes de entrenar)", text: "1 plátano + 3 lonchas de pavo. Café solo." },
-    { meal: "Post-entreno", text: "1 batido de proteína Whey Isolate con agua fría, justo al acabar las pesas." },
-    { meal: "Cena", text: "Revuelto de 3 claras y 1 huevo entero con champiñones (o gambas) + 1 tomate aliñado." }
+    { meal: "Desayuno", text: "40 g de copos de avena cocidos con agua + 1 manzana + canela. Café solo.", kcal: 320 },
+    { meal: "Comida", text: "200 g de lomo de cerdo magro (o ternera) + 60 g (en seco) de pasta integral o quinoa + ensalada grande. Toma los 5 g de Creatina en agua.", kcal: 620 },
+    { meal: "Merienda (1h antes de entrenar)", text: "1 plátano + 3 lonchas de pavo. Café solo.", kcal: 190 },
+    { meal: "Post-entreno", text: "1 batido de proteína Whey Isolate con agua fría, justo al acabar las pesas.", kcal: 110 },
+    { meal: "Cena", text: "Revuelto de 3 claras y 1 huevo entero con champiñones (o gambas) + 1 tomate aliñado.", kcal: 310 }
   ]
 };
 
@@ -418,14 +425,16 @@ const MEALS_PHASE2_LOW = { // Lunes, Miércoles, Domingo — recorte de hidratos
 const FASE3_RULES_NOTE = "Las 3 normas del volumen neto: el arroz y la pasta se mantienen al mediodía (a diferencia de la Fase 4, aquí sí necesitas hidratos por la tarde para mover pesos pesados), no te saltes el vacío abdominal cada mañana en ayunas (mantiene el transverso tenso mientras ganas volumen), y el plátano post-entreno es obligatorio para abrir la puerta celular a la proteína.";
 
 const MEALS_FASE3_MON = { // Lunes, Martes — días de pesos fuertes
-  label: "Menú de hipertrofia (~2.400 kcal)",
+  label: "Menú de hipertrofia",
   zoneColor: "#F5B400",
+  totalKcal: 2480,
+  macros: { protein: 175, carbs: 270, fat: 65 },
   items: [
-    { meal: "Desayuno", text: "Tortilla de 2 huevos enteros + 2 claras + 1 tostada integral grande con medio aguacate chafado. Café con un chorro de leche desnatada." },
-    { meal: "Comida", text: "220 g de pechuga de pavo a la plancha + 90 g (en seco) de arroz integral + un plato grande de verduras salteadas (calabacín, champiñones) con aceite de oliva." },
-    { meal: "Merienda (pre-entreno, 17:00)", text: "Un bol con 60 g de copos de avena mezclados con leche desnatada y un cacito de proteína Whey Isolate." },
-    { meal: "Post-entreno", text: "1 plátano maduro inmediatamente al terminar las pesas." },
-    { meal: "Cena", text: "200 g de filete de salmón al horno + puré de calabaza con un chorrito de aceite de oliva." }
+    { meal: "Desayuno", text: "Tortilla de 2 huevos enteros + 2 claras + 1 tostada integral grande con medio aguacate chafado. Café con un chorro de leche desnatada.", kcal: 490 },
+    { meal: "Comida", text: "220 g de pechuga de pavo a la plancha + 90 g (en seco) de arroz integral + un plato grande de verduras salteadas (calabacín, champiñones) con aceite de oliva.", kcal: 740 },
+    { meal: "Merienda (pre-entreno, 17:00)", text: "Un bol con 60 g de copos de avena mezclados con leche desnatada y un cacito de proteína Whey Isolate.", kcal: 430 },
+    { meal: "Post-entreno", text: "1 plátano maduro inmediatamente al terminar las pesas.", kcal: 110 },
+    { meal: "Cena", text: "200 g de filete de salmón al horno + puré de calabaza con un chorrito de aceite de oliva.", kcal: 450 }
   ]
 };
 
@@ -572,12 +581,14 @@ const MEALS_FASE4_CLEAN = { // Lunes, Miércoles, Domingo
 const MEALS_FASE4_GYM = { // Martes, Jueves — gimnasio pesado + HIIT
   label: "Menú de energía para pesos pesados",
   zoneColor: "#F5B400",
+  totalKcal: 1650,
+  macros: { protein: 160, carbs: 90, fat: 45 },
   items: [
-    { meal: "Desayuno", text: "40 g de copos de avena cocidos con agua y canela + 1 café solo." },
-    { meal: "Comida", text: "200 g de ternera magra + 50 g (en seco) de pasta integral + ensalada verde." },
-    { meal: "Merienda (16:30, 1h antes del gimnasio)", text: "40 g de almendras naturales + 1 café solo." },
-    { meal: "Post-entreno", text: "Tu batido de proteína Whey Isolate con agua fría." },
-    { meal: "Cena de máxima definición", text: "Un pote entero de claras de huevo (en tortilla o revuelto) con espinacas frescos." }
+    { meal: "Desayuno", text: "40 g de copos de avena cocidos con agua y canela + 1 café solo.", kcal: 210 },
+    { meal: "Comida", text: "200 g de ternera magra + 50 g (en seco) de pasta integral + ensalada verde.", kcal: 560 },
+    { meal: "Merienda (16:30, 1h antes del gimnasio)", text: "40 g de almendras naturales + 1 café solo.", kcal: 260 },
+    { meal: "Post-entreno", text: "Tu batido de proteína Whey Isolate con agua fría.", kcal: 110 },
+    { meal: "Cena de máxima definición", text: "Un pote entero de claras de huevo (en tortilla o revuelto) con espinacas frescos.", kcal: 190 }
   ]
 };
 
@@ -677,6 +688,55 @@ const WEEKLY_SCHEDULE_FASE4 = {
     dow: 0, label: "Domingo", type: "rest", typeLabel: "Descanso total",
     training: { title: "Descanso total", detail: "Cero actividad. Pasea con la familia de forma relajada." },
     meals: MEALS_FASE4_CLEAN, supplements: daySupplements(), note: FASE4_RULES_NOTE
+  }
+};
+
+/* ---------------------------------------------------------------------
+   DICCIONARIO DE CALORÍAS — referencia rápida (pesos en crudo/seco,
+   que es como se pesan en la báscula de cocina)
+   --------------------------------------------------------------------- */
+const CALORIE_DICTIONARY = {
+  proteinas: {
+    title: "🥩 Las proteínas (el tejido de tu músculo)",
+    items: [
+      { name: "Pechuga de pollo / pavo (200 g)", kcal: 220, macro: "46 g proteína / 4 g grasa / 0 g hidratos" },
+      { name: "Filete de ternera magra (200 g)", kcal: 260, macro: "44 g proteína / 8 g grasa / 0 g hidratos" },
+      { name: "Merluza / bacalao / lenguado (200 g)", kcal: 150, macro: "34 g proteína / 2 g grasa / 0 g hidratos", note: "La proteína más limpia — la de referencia en Fase 4." },
+      { name: "Salmón atlántico al horno (200 g)", kcal: 360, macro: "40 g proteína / 22 g grasa (Omega 3) / 0 g hidratos" },
+      { name: "Claras de huevo líquidas (pote de 250 g)", kcal: 125, macro: "27 g proteína / 0 g grasa / 0 g hidratos", note: "El arma secreta del destape." },
+      { name: "Huevo entero (unidad grande)", kcal: 80, macro: "7 g proteína / 6 g grasa / 0 g hidratos" },
+      { name: "1 cacito de proteína Whey Isolate (30 g)", kcal: 110, macro: "26 g proteína / 0,5 g grasa / 0,5 g hidratos" }
+    ]
+  },
+  hidratos: {
+    title: "🌾 Los carbohidratos (la gasolina de tus series)",
+    items: [
+      { name: "Arroz / pasta integral — ración pequeña (40 g, Fase 1)", kcal: 145 },
+      { name: "Arroz / pasta integral — ración media (60 g, Fase 1/2)", kcal: 215 },
+      { name: "Arroz / pasta integral — ración de carga (90 g, Fase 3)", kcal: 325 },
+      { name: "Copos de avena — ración de 40 g", kcal: 150 },
+      { name: "Copos de avena — ración de 60 g", kcal: 225 },
+      { name: "Patata blanca cruda — ración de 200 g", kcal: 170 },
+      { name: "Patata blanca cruda — ración de 250 g", kcal: 212 },
+      { name: "Plátano maduro (unidad mediana, sin piel)", kcal: 110, macro: "26 g hidratos rápidos" }
+    ]
+  },
+  grasas: {
+    title: "🥑 Grasas saludables y suplementos",
+    items: [
+      { name: "Nueces / almendras naturales (40 g, un puñado generoso)", kcal: 245, note: "Muy calóricas — hay que pesarlas exactas." },
+      { name: "Cucharada sopera de AOVE (10 ml)", kcal: 90, note: "Dos cucharadas de más en la ensalada suman 180 kcal sin darte cuenta." },
+      { name: "Medio aguacate mediano (≈70 g de pulpa)", kcal: 115 }
+    ]
+  },
+  leche: {
+    title: "☕ La leche del café — comparativa",
+    note: "Con un chorrito de ~40 ml por taza (2 tazas al día = 80 ml totales):",
+    items: [
+      { name: "Leche entera de vaca (80 ml)", kcal: 52 },
+      { name: "Leche desnatada de vaca (80 ml)", kcal: 28 },
+      { name: "Leche de almendras ZERO (80 ml)", kcal: 11, note: "Cero azúcar — la recomendada para la Fase 4." }
+    ]
   }
 };
 
