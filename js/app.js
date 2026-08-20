@@ -43,6 +43,12 @@ function nextMonday(d) {
   const add = day === 1 ? 0 : (day === 0 ? 1 : 8 - day);
   return addDays(startOfDay(d), add);
 }
+// Ajusta cualquier fecha al lunes de esa misma semana (las semanas del plan van lunes-domingo)
+function mondayOfWeek(d) {
+  const day = d.getDay();
+  const back = day === 0 ? 6 : day - 1;
+  return addDays(startOfDay(d), -back);
+}
 
 const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MONTHS_ES_LONG = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -73,11 +79,18 @@ function todayInfo() {
   return { date: now, week, dayKey };
 }
 
+function isPlanFinished(week) { return week > TOTAL_PLAN_WEEKS; }
+
 function getScheduleForDate(date) {
   const week = getWeekNumber(date);
-  if (week < 1) return null;
+  if (week < 1 || week > TOTAL_PLAN_WEEKS) return null;
   const dayKey = JS_DOW_TO_KEY[date.getDay()];
   return getDaySchedule(week, dayKey);
+}
+
+function milestoneForDate(date) {
+  const dk = dateKey(date);
+  return MILESTONES.find(m => m.date === dk) || null;
 }
 
 /* ---------------- Toast / Modal ---------------- */
@@ -108,6 +121,78 @@ function openModal(titleHTML, bodyHTML) {
 function closeModal() {
   const el = $("#modalBackdrop");
   if (el) el.remove();
+}
+
+function confirmModal(title, desc, confirmLabel, onConfirm) {
+  openModal(
+    `<div class="modal-title">${title}</div><div class="modal-desc">${desc}</div>`,
+    `<div class="btn-row" style="margin-top:6px">
+      <button type="button" class="btn btn-ghost" id="confirmCancelBtn">Cancelar</button>
+      <button type="button" class="btn" id="confirmOkBtn" style="background:var(--z5); color:#fff;">${confirmLabel}</button>
+    </div>`
+  );
+  $("#confirmCancelBtn").addEventListener("click", closeModal);
+  $("#confirmOkBtn").addEventListener("click", () => { closeModal(); onConfirm(); });
+}
+
+/* ---------------- Notificaciones ---------------- */
+function notificationsSupported() { return "Notification" in window; }
+
+async function ensureNotificationPermission() {
+  if (!notificationsSupported()) return "unsupported";
+  if (Notification.permission === "granted") return "granted";
+  if (Notification.permission === "denied") return "denied";
+  try { return await Notification.requestPermission(); } catch (e) { return "denied"; }
+}
+
+async function showLocalNotification(title, body, tag) {
+  if (!notificationsSupported() || Notification.permission !== "granted") return;
+  try {
+    if ("serviceWorker" in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      reg.showNotification(title, { body, tag, icon: "icons/icon-192.png", badge: "icons/icon-192.png" });
+    } else {
+      new Notification(title, { body, tag, icon: "icons/icon-192.png" });
+    }
+  } catch (e) {}
+}
+
+async function tryRegisterPeriodicSync() {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if (!("periodicSync" in reg)) return;
+    const status = await navigator.permissions.query({ name: "periodic-background-sync" });
+    if (status.state === "granted") {
+      await reg.periodicSync.register("forja21-daily-check", { minInterval: 20 * 60 * 60 * 1000 });
+    }
+  } catch (e) { /* no soportado — silencioso, es un extra */ }
+}
+
+// Avisa (una vez al día) de lo que toca hoy: báscula o entreno. Se dispara al abrir/foreground la app.
+function maybeSendDailyReminder() {
+  if (!state.settings.notificationsEnabled || Notification?.permission !== "granted") return;
+  const { date, week, dayKey } = todayInfo();
+  if (week < 1 || isPlanFinished(week)) return;
+  const dk = dateKey(date);
+  const flagKey = "forja21_notified_" + dk;
+  if (localStorage.getItem(flagKey)) return;
+
+  const day = getDaySchedule(week, dayKey);
+  let title, body;
+  if (day.isWeighDay && !getWeightLog(week)) {
+    const t = getWeightTargetForWeek(week);
+    title = "⚖️ Hoy toca báscula";
+    body = `En ayunas, antes del café. Objetivo: ${t ? t.weight + " kg" : "—"}.`;
+  } else if (["gym", "quality", "long"].includes(day.type)) {
+    title = `💪 Hoy toca ${day.typeLabel}`;
+    body = day.training?.todayDistance || day.training?.title || "Abre Forja21 para ver el detalle de hoy.";
+  } else {
+    title = "😌 Hoy descanso";
+    body = day.typeLabel;
+  }
+  showLocalNotification(title, body, "forja21-daily");
+  localStorage.setItem(flagKey, "1");
 }
 
 /* ---------------- Pace helpers ---------------- */
@@ -394,14 +479,19 @@ function renderOnboarding() {
   $("#onboardForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
+    const pickedDate = parseDate(fd.get("startDate"));
+    const monday = mondayOfWeek(pickedDate);
     state.settings.name = fd.get("name") || "Atleta";
-    state.settings.startDate = fd.get("startDate");
+    state.settings.startDate = dateKey(monday);
     state.settings.startWeight = parseFloat(fd.get("startWeight")) || 87.5;
     state.settings.onboarded = true;
     storeSet(STORE_KEYS.settings, state.settings);
     $("#bottomnav").style.display = "";
     state.activeTab = "hoy";
     render();
+    if (dateKey(pickedDate) !== dateKey(monday)) {
+      showToast(`Ajustado al lunes ${fmtDateShort(monday)} (las semanas van de lunes a domingo)`);
+    }
   });
 }
 
@@ -432,6 +522,8 @@ function renderRouteBar() {
   });
   $("#topbarSub").textContent = week < 1
     ? `Empieza en ${-week + 1} semana${-week + 1 === 1 ? "" : "s"}`
+    : isPlanFinished(week)
+    ? "Plan completado 🏆"
     : `Semana ${week} · ${getPhaseForWeek(week).name}`;
 }
 
@@ -446,6 +538,13 @@ function renderStatStrip() {
     el.innerHTML = `
       <div class="stat-chip"><b>${days}</b><span>días para empezar</span></div>
       <div class="stat-chip"><b>${state.settings.startWeight} kg</b><span>peso de salida</span></div>`;
+    return;
+  }
+
+  if (isPlanFinished(week)) {
+    el.innerHTML = `
+      <div class="stat-chip"><b>🏆</b><span>plan completado</span></div>
+      <div class="stat-chip"><b>${latestWeight().toFixed(1)} kg</b><span>peso actual</span></div>`;
     return;
   }
 
@@ -493,6 +592,25 @@ function renderHoy() {
           <button class="btn btn-ghost" id="goSettings" style="margin-top:10px">Ir a Ajustes</button>
         </div>`;
     $("#goSettings").addEventListener("click", () => { state.activeTab = "ajustes"; render(); });
+    return;
+  }
+
+  // ---- Plan ya completado (más de TOTAL_PLAN_WEEKS semanas desde el inicio) ----
+  if (isPlanFinished(week)) {
+    const totalWorkouts = state.workouts.length;
+    $("#view").innerHTML = `
+        <div class="hero">
+          <div class="hero-eyebrow">${greeting}, ${name}</div>
+          <div class="hero-title">🏆 Has completado el plan</div>
+          <p class="hero-desc">Del ${state.settings.startWeight} kg inicial hasta hoy: ${latestWeight().toFixed(1)} kg, con ${totalWorkouts} sesiones registradas por el camino. Si quieres seguir entrenando, puedes ajustar la fecha de inicio en Ajustes para repasar cualquier fase del plan desde el Calendario.</p>
+        </div>
+        <div class="card">
+          <h4>Tus hitos</h4>
+          ${MILESTONES.map(m => `
+            <div class="exercise">
+              <div><div class="exercise-name">${m.icon} ${m.label}</div><div class="exercise-note">${m.desc}</div></div>
+            </div>`).join("")}
+        </div>`;
     return;
   }
 
@@ -623,6 +741,7 @@ function renderCalendario() {
     days.forEach(({ key, date }) => {
       const d = getDaySchedule(todayWeek, key);
       const isToday = key === todayKey;
+      const milestone = milestoneForDate(date);
       let sub = d.typeLabel;
       if (d.training?.todayDistance) sub = d.training.todayDistance;
       html += `
@@ -632,8 +751,8 @@ function renderCalendario() {
             <div class="m">${DOW_SHORT[date.getDay()]}</div>
           </div>
           <div class="week-day-mid">
-            <div class="week-day-title">${d.typeLabel}</div>
-            <div class="week-day-sub">${sub}</div>
+            <div class="week-day-title">${d.typeLabel} ${d.isWeighDay ? "⚖️" : ""} ${milestone ? milestone.icon : ""}</div>
+            <div class="week-day-sub">${milestone ? milestone.label : sub}</div>
           </div>
           <div class="week-day-chevron"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         </div>`;
@@ -692,10 +811,11 @@ function renderMonthGrid() {
     const inMonth = d.getMonth() === month;
     const isToday = startOfDay(d).getTime() === today.getTime();
     const sched = getScheduleForDate(d);
+    const milestone = milestoneForDate(d);
     html += `
-      <div class="month-cell ${inMonth ? "" : "out"} ${isToday ? "today" : ""}" data-date="${dateKey(d)}">
+      <div class="month-cell ${inMonth ? "" : "out"} ${isToday ? "today" : ""} ${milestone ? "milestone" : ""}" data-date="${dateKey(d)}" title="${milestone ? milestone.label : ""}">
         <span class="month-cell-num">${d.getDate()}</span>
-        ${sched ? `<span class="month-cell-dot" style="background:${dayTypeColor(sched.type)}"></span>` : ""}
+        ${milestone ? `<span class="month-cell-icon">${milestone.icon}</span>` : sched?.isWeighDay ? `<span class="month-cell-icon">⚖️</span>` : sched ? `<span class="month-cell-dot" style="background:${dayTypeColor(sched.type)}"></span>` : ""}
       </div>`;
   }
   html += `</div>
@@ -703,6 +823,9 @@ function renderMonthGrid() {
       ${[
         ["rest", "Descanso"], ["active", "Activo"], ["gym", "Gimnasio"], ["quality", "Calidad"], ["long", "Tirada larga"], ["general", "Fase sin calendario"]
       ].map(([t, l]) => `<span class="legend-item"><i style="background:${dayTypeColor(t)}"></i>${l}</span>`).join("")}
+      <span class="legend-item">⚖️ Pesaje</span>
+      <span class="legend-item">🏁 Carrera</span>
+      <span class="legend-item">🏆 Objetivo final</span>
     </div>`;
   return html;
 }
@@ -713,15 +836,22 @@ function dayTypeColor(type) {
 
 function openDayModal(dateObj) {
   const week = getWeekNumber(dateObj);
-  if (week < 1) {
-    openModal(`<div class="modal-title">${fmtDateShort(dateObj)}</div>`, `<p class="phase-summary">Todavía no ha empezado tu plan en esta fecha.</p>`);
+  const milestone = milestoneForDate(dateObj);
+  if (week < 1 || week > TOTAL_PLAN_WEEKS) {
+    openModal(
+      `<div class="modal-title">${milestone ? milestone.icon + " " + milestone.label : fmtDateShort(dateObj)}</div>`,
+      milestone
+        ? `<p class="phase-summary">${milestone.desc}</p>`
+        : `<p class="phase-summary">${week < 1 ? "Todavía no ha empezado tu plan en esta fecha." : "Esta fecha queda fuera del plan (ya lo habrás completado)."}</p>`
+    );
     return;
   }
   const dayKey = JS_DOW_TO_KEY[dateObj.getDay()];
   const d = getDaySchedule(week, dayKey);
+  const milestoneBanner = milestone ? `<div class="card" style="border-color: color-mix(in srgb, var(--z4) 45%, var(--border))"><div class="card-row"><span style="font-size:20px">${milestone.icon}</span><h4 style="flex:1">${milestone.label}</h4></div><p class="phase-summary" style="margin-top:6px">${milestone.desc}</p></div>` : "";
   openModal(
-    `<div class="modal-title">${d.label} · ${fmtDateShort(dateObj)}</div><div class="modal-desc">Semana ${week} · ${d.typeLabel}</div>`,
-    `<div>${fullDayHTML(d, dateObj)}</div>`
+    `<div class="modal-title">${d.label} · ${fmtDateShort(dateObj)}</div><div class="modal-desc">Semana ${week} · ${d.typeLabel}${d.isWeighDay ? " · ⚖️ pesaje" : ""}</div>`,
+    `<div>${milestoneBanner}${fullDayHTML(d, dateObj)}</div>`
   );
   bindSuppHandlers();
   const trainKeys = ["gym", "quality", "long"];
@@ -917,6 +1047,22 @@ function renderAjustes() {
         </div>`).join("")}
     </div>
 
+    <div class="section-title">Avisos</div>
+    <div class="card">
+      <div class="card-row">
+        <div>
+          <h4 style="font-size:14px">Avisos diarios</h4>
+          <p class="phase-summary" style="margin-top:4px">Un aviso al abrir la app avisando de si hoy toca báscula o qué entreno toca.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="notifToggle" ${s.notificationsEnabled ? "checked" : ""} ${notificationsSupported() ? "" : "disabled"} />
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </label>
+      </div>
+      ${!notificationsSupported() ? `<p class="phase-summary" style="margin-top:10px; color:var(--z4)">Tu navegador no soporta notificaciones.</p>` : ""}
+      <p class="phase-summary" style="margin-top:10px">Solo se muestran mientras el teléfono permite que la app avise en segundo plano — esto depende del sistema operativo: funciona bien en Android con la app instalada, pero iPhone no permite avisos fiables en segundo plano para apps web, ni siquiera instaladas. Es la limitación de la plataforma, no de Forja21.</p>
+    </div>
+
     <div class="section-title">Datos</div>
     <div class="card">
       <p class="phase-summary" style="margin-bottom:12px">Todos tus datos (peso, sesiones, checklist) se guardan solo en este dispositivo.</p>
@@ -927,20 +1073,50 @@ function renderAjustes() {
 
   $("#saveSettings").addEventListener("click", () => {
     state.settings.name = $("#setName").value || "Atleta";
-    state.settings.startDate = $("#setStart").value || state.settings.startDate;
+    const pickedRaw = $("#setStart").value;
+    if (pickedRaw) {
+      const monday = mondayOfWeek(parseDate(pickedRaw));
+      state.settings.startDate = dateKey(monday);
+    }
     state.settings.startWeight = parseFloat($("#setStartWeight").value) || state.settings.startWeight;
     storeSet(STORE_KEYS.settings, state.settings);
-    showToast("Ajustes guardados");
+    showToast("Ajustes guardados" + (pickedRaw && pickedRaw !== state.settings.startDate ? " (ajustado al lunes de esa semana)" : ""));
     render();
   });
 
+  $("#notifToggle")?.addEventListener("change", async (e) => {
+    if (e.target.checked) {
+      const perm = await ensureNotificationPermission();
+      if (perm === "granted") {
+        state.settings.notificationsEnabled = true;
+        storeSet(STORE_KEYS.settings, state.settings);
+        showToast("Avisos activados");
+        tryRegisterPeriodicSync();
+        maybeSendDailyReminder();
+      } else {
+        e.target.checked = false;
+        showToast(perm === "denied" ? "Bloqueado en los permisos del navegador" : "No se pudo activar");
+      }
+    } else {
+      state.settings.notificationsEnabled = false;
+      storeSet(STORE_KEYS.settings, state.settings);
+      showToast("Avisos desactivados");
+    }
+  });
+
   $("#resetData").addEventListener("click", () => {
-    if (!confirm("¿Seguro? Se borrarán tus pesos, sesiones, checklist y el perfil guardado.")) return;
-    Object.values(STORE_KEYS).forEach(k => localStorage.removeItem(k));
-    state.weights = []; state.workouts = []; state.supps = {};
-    state.settings = { ...PROFILE_DEFAULTS, onboarded: false };
-    showToast("Datos borrados");
-    boot();
+    confirmModal(
+      "¿Borrar todos tus datos?",
+      "Se borrarán tus pesos, sesiones, checklist y el perfil guardado. Esta acción no se puede deshacer.",
+      "Sí, borrar todo",
+      () => {
+        Object.values(STORE_KEYS).forEach(k => localStorage.removeItem(k));
+        state.weights = []; state.workouts = []; state.supps = {};
+        state.settings = { ...PROFILE_DEFAULTS, onboarded: false };
+        showToast("Datos borrados");
+        boot();
+      }
+    );
   });
 }
 
@@ -1017,6 +1193,10 @@ function boot() {
   } else {
     $("#bottomnav").style.display = "";
     render();
+    maybeSendDailyReminder();
   }
 }
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && state.settings.onboarded) maybeSendDailyReminder();
+});
 boot();
