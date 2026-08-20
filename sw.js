@@ -1,4 +1,4 @@
-const CACHE_NAME = "forja21-v1";
+const CACHE_NAME = "forja21-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,10 @@ const APP_SHELL = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
+  "./icons/apple-touch-icon-120.png",
+  "./icons/apple-touch-icon-152.png",
+  "./icons/apple-touch-icon-167.png",
+  "./icons/apple-touch-icon-180.png",
   "./icons/favicon-32.png"
 ];
 
