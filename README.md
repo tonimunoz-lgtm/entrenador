@@ -12,9 +12,9 @@ forja21/
 ├── sw.js                ← service worker (funciona sin conexión)
 ├── vercel.json           ← cabeceras de caché
 ├── css/style.css
-├── js/data.js            ← todo tu plan (fases, semanas, comidas, pesos objetivo)
-├── js/app.js              ← lógica de la app
-└── icons/                 ← iconos generados para el manifest
+├── js/data.js             ← todo tu plan (fases, semanas, comidas, pesos objetivo)
+├── js/app.js               ← lógica de la app
+└── icons/                  ← iconos generados para el manifest
 ```
 
 No hay build step ni dependencias: es HTML + CSS + JS puro, así que Vercel
@@ -27,7 +27,7 @@ lo sirve tal cual.
    ```
    git init
    git add .
-   git commit -m "Forja21 v1"
+   git commit -m "Forja21 v2"
    git branch -M main
    git remote add origin https://github.com/TU_USUARIO/forja21.git
    git push -u origin main
@@ -43,7 +43,8 @@ lo sirve tal cual.
 
 - **Android (Chrome)**: abre la URL → menú (⋮) → "Añadir a pantalla de
   inicio". También puede aparecer un botón de instalación dentro de la
-  propia app (icono de descarga arriba a la derecha).
+  propia app (icono de descarga arriba a la derecha) — una vez instalada,
+  ese botón desaparece solo.
 - **iPhone (Safari)**: abre la URL → botón compartir → "Añadir a pantalla
   de inicio". (iOS no soporta el prompt automático de instalación; este
   paso manual es el único camino, es una limitación de Apple, no de la app.)
@@ -53,33 +54,46 @@ funciona sin conexión gracias al service worker.
 
 ## Cómo funciona
 
-- **Hoy**: qué toca entrenar y comer hoy según la fecha, con checklist de
-  suplementos y botón para registrar la sesión al terminar (distancia,
-  tiempo, ritmo, pulso medio, notas).
-- **Semana**: las 7 tarjetas de la semana actual, cada una abre el detalle
-  completo en una ficha.
-- **Fases**: las 5 fases de todo el plan (ago. 2026 → jun. 2027) con su
-  rango de peso, kcal objetivo y foco de entreno.
-- **Peso**: pesaje semanal (sábados en ayunas), comparación automática con
-  el objetivo de esa semana, e histórico completo.
-- **Ajustes**: nombre, fecha de inicio del plan (para recalcular semanas si
-  cambias de fecha real de arranque), zonas de FC, fichas de suplementación
-  y el historial de todas tus sesiones registradas.
+- **Bienvenida (solo la primera vez)**: te explica el plan y sus objetivos, y te
+  pide tu nombre, el lunes en que empiezas y tu peso de hoy. A partir de ahí no
+  vuelve a aparecer — pasas directo al panel principal.
+- **Hoy**: panel de inicio con saludo personalizado y 4 indicadores rápidos
+  (semana actual, % de progreso de peso, entrenos hechos esta semana,
+  suplementos tomados hoy), el entreno y la nutrición del día calculados
+  automáticamente a partir de la fecha (nunca hay que saber "en qué semana
+  estoy"), el checklist de suplementos con marca y dosis, avisos cuando mañana
+  toca báscula, y el botón para registrar la sesión al terminar.
+- **Calendario**: vista Semana (como antes) y vista **Mes**, con un punto de
+  color por día según el tipo de entreno — toca cualquier día para ver su
+  ficha completa y registrar una sesión si aplica.
+- **Fases**: las 5 fases de todo el plan (ago. 2026 → jun. 2027).
+- **Peso**: pesaje semanal, comparación con el objetivo, histórico completo.
+- **Ajustes**: perfil, zonas de FC, fichas de suplementación y el historial de
+  todas tus sesiones (con el ritmo objetivo del día y la desviación real).
 
-Todos los datos (peso, sesiones, checklist de suplementos) se guardan
-**solo en el dispositivo** (localStorage) — no hace falta cuenta ni
-conexión. Si en algún momento quieres sincronizar entre varios
-dispositivos (móvil + ordenador), se puede añadir Firebase (Firestore) sin
-tocar el resto de la app — dímelo cuando quieras y lo conectamos con tus
-credenciales de un proyecto Firebase.
+### Seguimiento de ritmo
+Cuando un día tiene un ritmo objetivo (ej. series a 4:45 min/km), al registrar
+la sesión introduces tu ritmo real y la app calcula automáticamente la
+desviación (ej. "+0:10/km" o "−0:05/km") y la guarda en el historial.
+
+### Ejemplos de ejercicios
+Cada ejercicio de gimnasio tiene un enlace "▶ Ver ejemplo" que abre una
+búsqueda en YouTube con el nombre exacto del ejercicio — así siempre ves un
+vídeo actualizado de la técnica o la máquina, sin depender de imágenes fijas
+que puedan quedar desactualizadas o rotas.
+
+Todos los datos (peso, sesiones, checklist, perfil) se guardan **solo en el
+dispositivo** (localStorage) — no hace falta cuenta ni conexión. Si en algún
+momento quieres sincronizar entre varios dispositivos, se puede añadir
+Firebase (Firestore) sin tocar el resto de la app.
 
 ## Ajuste importante antes de usarla
 
-En **Ajustes → Fecha de inicio del plan** hay que poner el **lunes** de tu
-semana 1 real (por defecto está puesto el 24 de agosto de 2026). Las
-semanas del plan van de lunes a domingo, con el sábado como día de tirada
-larga y pesaje — así que ese campo debe ser siempre un lunes para que todo
-cuadre con el calendario de fases y pesos.
+En el onboarding (o luego en **Ajustes → Fecha de inicio del plan**) hay que
+poner el **lunes** de tu semana 1 real. Las semanas van de lunes a domingo,
+con el sábado como día de tirada larga y pesaje. Si esa fecha está en el
+futuro, la app te lo dice claramente en vez de mostrar contenido de un día
+que aún no toca.
 
 ## Notas sobre los iconos
 
