@@ -380,8 +380,21 @@ const SUPPLEMENT_DETAILS = [
 ];
 
 /* ---------------------------------------------------------------------
-   Helpers de acceso
+   Resolución de textos que dependían de "semana 1-4 / 5-8" — ahora se
+   calcula la semana real y se muestra solo el bloque que corresponde.
    --------------------------------------------------------------------- */
+function fase1CardioText(week) {
+  return week <= 4
+    ? "Cinta inmediatamente después: 35 minutos. Inclinación 1.0%. Mantener Garmin en Zona 2 (115–126 ppm)."
+    : "Cinta inmediatamente después: 45 minutos. Inclinación 1.0%. Mantener Garmin en Zona 2 (115–126 ppm).";
+}
+function fase1TempoBlock(week) {
+  if (week <= 4) {
+    return { range: "Min 10–30 (tempo)", text: "Zona 3 (127–137 ppm) a ~5:10 min/km.", pace: "5:10" };
+  }
+  return { range: "Min 10–30 (series)", text: "4 series de 3 min en Zona 4 (138–148 ppm) a ~4:55 min/km, recuperando 2 min en Zona 2 entre series.", pace: "4:55" };
+}
+
 function getPhaseForWeek(weekNumber) {
   return PHASES.find(p => weekNumber >= p.weeks[0] && weekNumber <= p.weeks[1]) || PHASES[PHASES.length - 1];
 }
@@ -413,6 +426,25 @@ function getDaySchedule(weekNumber, dayKey) {
     day.training.todayDistance = day.training.byWeek[weekNumber] || null;
   }
 
+  // Resuelve los textos "semana 1-4 / 5-8" a un único bloque según la semana real,
+  // y añade el ritmo objetivo explícito para poder comparar contra el registro.
+  if ((phase.key === "fase1" || phase.key === "fase1b")) {
+    if (dayKey === "thu" && day.training) {
+      day.training.cardio = fase1CardioText(weekNumber);
+    }
+    if (dayKey === "fri" && day.training && day.training.blocks) {
+      const tempo = fase1TempoBlock(weekNumber);
+      day.training.blocks[1] = { range: tempo.range, text: tempo.text };
+      day.training.targetPace = tempo.pace;
+    }
+  }
+  if (phase.key === "fase2" && dayKey === "fri") {
+    day.training.targetPace = "4:42";
+  }
+  if (phase.key === "fase2" && dayKey === "sat") {
+    day.training.targetPace = weekNumber === 22 ? "4:47" : "4:45";
+  }
+
   if (phase.key === "fase3" || phase.key === "fase4") {
     day.isGeneralPhase = true;
     day.type = "general";
@@ -427,3 +459,6 @@ function getDaySchedule(weekNumber, dayKey) {
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const JS_DOW_TO_KEY = { 1: "mon", 2: "tue", 3: "wed", 4: "thu", 5: "fri", 6: "sat", 0: "sun" };
+
+// Nº de días de entreno "activo" (no descanso) programados en una semana normal
+function trainingDayKeysForWeek() { return ["tue", "thu", "fri", "sat"]; }
