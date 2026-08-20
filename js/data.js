@@ -57,6 +57,24 @@ const WEEKLY_WEIGHTS_BLOQUE1 = [
 ];
 
 /* ---------------------------------------------------------------------
+   FASE 4 — Peso objetivo semana a semana (semanas 33–40, Mayo-Junio 2027)
+   --------------------------------------------------------------------- */
+const WEEKLY_WEIGHTS_FASE4 = [
+  { week: 33, weight: 78.5, note: "Inicio de Fase 4 — mes de mayo" },
+  { week: 34, weight: 77.6 },
+  { week: 35, weight: 76.7 },
+  { week: 36, weight: 75.8 },
+  { week: 37, weight: 74.9, note: "Inicio de junio" },
+  { week: 38, weight: 74.0 },
+  { week: 39, weight: 73.1 },
+  { week: 40, weight: 71.5, note: "¡Abdominales completamente destapados!" }
+];
+
+function getAllWeightTargetWeeks() {
+  return [...WEEKLY_WEIGHTS_BLOQUE1, ...WEEKLY_WEIGHTS_FASE4].map(w => w.week).sort((a, b) => a - b);
+}
+
+/* ---------------------------------------------------------------------
    FASES (5 fases a lo largo de todo el plan)
    --------------------------------------------------------------------- */
 const PHASES = [
@@ -199,7 +217,14 @@ function daySupplements({ multi = true, creatina = false, proteina = false, omeg
 const WEEKLY_SCHEDULE_BASE = {
   mon: {
     dow: 1, label: "Lunes", type: "rest", typeLabel: "Descanso total",
-    training: { title: "Rutina espalda sana", detail: "Cero impacto. Rutina postural antes de dormir: 12 repeticiones de Gato-Camello + 30 segundos de estiramiento piramidal por lado." },
+    training: {
+      title: "Rutina espalda sana",
+      detail: "Cero impacto. Rutina postural antes de dormir:",
+      items: [
+        { name: "Gato-Camello", note: "12 repeticiones" },
+        { name: "Estiramiento piramidal", note: "30 segundos por lado" }
+      ]
+    },
     meals: MEALS_GREEN, supplements: daySupplements()
   },
   tue: {
@@ -372,17 +397,133 @@ const MEALS_FASE3 = {
   ]
 };
 
-// Menú general de referencia para Fase 4 (Destape Final) — no hay calendario día a día
-const MEALS_FASE4 = {
-  label: "Las 4 reglas de oro de la definición (~1.600–1.700 kcal)",
-  zoneColor: "#EF4444",
+/* ---------------------------------------------------------------------
+   FASE 4 — El Destape Final (semanas 33–40, Mayo-Junio 2027)
+   Calendario día a día completo.
+   --------------------------------------------------------------------- */
+
+const FASE4_RULES_NOTE = "Las 3 normas innegociables de esta fase: cero hidratos a partir de las 16:00 (avena, arroz, pasta y patata fuera de la vista), la cena se pesa al gramo sin salsas ni aceites de más, y 4 litros de agua al día para eliminar el líquido subcutáneo.";
+
+const MEALS_FASE4_CLEAN = { // Lunes, Miércoles, Domingo
+  label: "Menú de vaciado (bajo en hidratos)",
+  zoneColor: "#22C55E",
   items: [
-    { meal: "Regla 1", text: "Bloqueo de hidratos a partir de las 16:00 — avena, arroz o patata solo en el desayuno y la comida de mediodía." },
-    { meal: "Regla 2 · Merienda", text: "1 café solo + 40 g de almendras o nueces naturales, 1h antes del gimnasio (nada de plátano ni tortitas de arroz)." },
-    { meal: "Entreno", text: "Pesas pesadas para proteger el músculo + HIIT en cinta al terminar: 10 ciclos de 30s a máxima velocidad (Z5) + 1 min caminando." },
-    { meal: "Regla 3 · Cena clínica", text: "Un pote entero de claras de huevo (tortilla o revuelto con espinacas), o bien 200 g de pescado blanco a la plancha con espárragos verdes." },
-    { meal: "Regla 4 · Agua", text: "Sube el consumo de agua a 4 litros diarios de forma estricta para eliminar la retención subcutánea." }
+    { meal: "Desayuno", text: "Tortilla de 3 claras de huevo + 1 café solo (sin tostada)." },
+    { meal: "Comida", text: "200 g de pechuga de pollo a la plancha + 300 g de brócoli al vapor + 30 g (en seco) de arroz integral." },
+    { meal: "Merienda (17:00)", text: "40 g de nueces naturales + 1 café solo (sin hidratos)." },
+    { meal: "Cena", text: "200 g de lluç (merluza) a la plancha con un raig de limón + ensalada de espinacas frescos." }
   ]
+};
+
+const MEALS_FASE4_GYM = { // Martes, Jueves — gimnasio pesado + HIIT
+  label: "Menú de energía para pesos pesados",
+  zoneColor: "#F5B400",
+  items: [
+    { meal: "Desayuno", text: "40 g de copos de avena cocidos con agua y canela + 1 café solo." },
+    { meal: "Comida", text: "200 g de ternera magra + 50 g (en seco) de pasta integral + ensalada verde." },
+    { meal: "Merienda (16:30, 1h antes del gimnasio)", text: "40 g de almendras naturales + 1 café solo." },
+    { meal: "Post-entreno", text: "Tu batido de proteína Whey Isolate con agua fría." },
+    { meal: "Cena de máxima definición", text: "Un pote entero de claras de huevo (en tortilla o revuelto) con espinacas frescos." }
+  ]
+};
+
+const MEALS_FASE4_FRI = { // Viernes — brazos/core + running Z2 corto
+  label: "Menú de brazos y running suave",
+  zoneColor: "#FB923C",
+  items: [
+    { meal: "Desayuno", text: "1 tostada integral con tomate triturado y 50 g de requesón desnatado + café solo." },
+    { meal: "Comida", text: "200 g de pavo + 200 g de patata al horno + espárragos verdes." },
+    { meal: "Merienda (16:30)", text: "40 g de nueces naturales + 1 café solo." },
+    { meal: "Post-running", text: "Tu batido de proteína Whey Isolate." },
+    { meal: "Cena de máxima definición", text: "200 g de lenguado o rape a la plancha + 8-10 espárragos verdes a la plancha." }
+  ]
+};
+
+const MEALS_FASE4_SAT = { // Sábado — cardio quemador exterior + pesaje
+  label: "Menú del cardio quemador",
+  zoneColor: "#FFD84D",
+  items: [
+    { meal: "Pre-running (en ayunas)", text: "1 café solo grande. Sin sólidos." },
+    { meal: "Comida (post-carrera)", text: "200 g de salmón a la plancha + un plato gigante de ensalada verde variada + 40 g (en seco) de arroz integral." },
+    { meal: "Merienda", text: "200 g de queso fresco batido 0% con un puñado de arándanos." },
+    { meal: "Cena", text: "Tortilla francesa de 2 huevos enteros con una lata de atún al natural." }
+  ]
+};
+
+const WEEKLY_SCHEDULE_FASE4 = {
+  mon: {
+    dow: 1, label: "Lunes", type: "rest", typeLabel: "Descanso total + vaciado metabólico",
+    training: { title: "Descanso total", detail: "Cero running, cero gimnasio — descanso total para que las articulaciones se recuperen. Reparte los 4 litros de agua a lo largo del día: es clave para eliminar la retención del bajo vientre." },
+    meals: MEALS_FASE4_CLEAN, supplements: daySupplements(), note: FASE4_RULES_NOTE
+  },
+  tue: {
+    dow: 2, label: "Martes", type: "gym", typeLabel: "Gimnasio (Torso pesado) + HIIT cinta",
+    training: {
+      title: "Fuerza (40 min)",
+      exercises: [
+        { name: "Press militar con mancuernas (hombro)", sets: "4 x 6", rest: "90s" },
+        { name: "Jalón al pecho pesado", sets: "4 x 6", rest: "90s" },
+        { name: "Press de banca con mancuernas", sets: "3 x 8", rest: "90s" }
+      ],
+      cardio: "Quema post-pesos (HIIT en cinta): 5 min de calentamiento + 10 ciclos de 30 segundos a máxima velocidad (Zona 5, roja) + 1 minuto caminando lento + 5 min de enfriamiento."
+    },
+    meals: MEALS_FASE4_GYM, supplements: daySupplements({ creatina: true, proteina: true }), note: FASE4_RULES_NOTE
+  },
+  wed: {
+    dow: 3, label: "Miércoles", type: "active", typeLabel: "Descanso activo + vacío abdominal",
+    training: {
+      title: "Vacío abdominal + caminar",
+      items: [
+        { name: "Vacío abdominal (Stomach Vacuum)", note: "4 series de 30 segundos, en ayunas por la mañana, expulsando el aire y metiendo la tripa hacia dentro." }
+      ],
+      detail: "Por la tarde, camina 30–40 minutos a ritmo suave."
+    },
+    meals: MEALS_FASE4_CLEAN, supplements: daySupplements(), note: FASE4_RULES_NOTE
+  },
+  thu: {
+    dow: 4, label: "Jueves", type: "gym", typeLabel: "Gimnasio (Pierna pesada) + HIIT cinta",
+    training: {
+      title: "Fuerza (35 min)",
+      exercises: [
+        { name: "Prensa de piernas inclinada", sets: "4 x 8", rest: "90s", note: "Pesado." },
+        { name: "Elevación de talones (gemelos) en escalón", sets: "4 x 15", rest: "45s" },
+        { name: "Pájaros / Bird-dog (core)", sets: "3 x 12", rest: "lentas", note: "Repeticiones muy lentas y controladas." }
+      ],
+      cardio: "Quema post-pesos (HIIT en cinta): el mismo bloque que el martes — 10 ciclos de 30 segundos a tope (Zona 5) + 1 minuto caminando."
+    },
+    meals: MEALS_FASE4_GYM, supplements: daySupplements({ creatina: true, proteina: true }), note: FASE4_RULES_NOTE
+  },
+  fri: {
+    dow: 5, label: "Viernes", type: "gym", typeLabel: "Gimnasio (Brazos/Core) + Running Z2 corto",
+    training: {
+      title: "Fuerza (30 min)",
+      exercises: [
+        { name: "Curl de bíceps con mancuerna", sets: "3 x 10", rest: "60s" },
+        { name: "Extensión de tríceps en polea", sets: "3 x 10", rest: "60s" },
+        { name: "Plancha frontal isométrica", sets: "3 x 60s", rest: "45s", note: "Aprieta glúteos y abdomen a tope." }
+      ],
+      cardio: "Running en cinta o exterior: 30 minutos muy suaves, aguja clavada en Zona 2 (115–126 ppm). Vacía los ácidos grasos que liberó el HIIT de ayer."
+    },
+    meals: MEALS_FASE4_FRI, supplements: daySupplements({ creatina: true, proteina: true }), note: FASE4_RULES_NOTE
+  },
+  sat: {
+    dow: 6, label: "Sábado", type: "long", typeLabel: "Running cardio quemador (exterior)",
+    isWeighDay: true,
+    training: {
+      title: "Cardio quemador — 45 min",
+      blocks: [
+        { range: "Min 0–15", text: "Zona 2 (115–126 ppm)." },
+        { range: "Min 15–35", text: "Zona 3 (127–137 ppm) — ritmo alegre." },
+        { range: "Min 35–45", text: "Zona 2 (115–126 ppm) — vuelta a la calma." }
+      ]
+    },
+    meals: MEALS_FASE4_SAT, supplements: daySupplements({ creatina: true }), note: FASE4_RULES_NOTE
+  },
+  sun: {
+    dow: 0, label: "Domingo", type: "rest", typeLabel: "Descanso total",
+    training: { title: "Descanso total", detail: "Cero actividad. Pasea con la familia de forma relajada." },
+    meals: MEALS_FASE4_CLEAN, supplements: daySupplements(), note: FASE4_RULES_NOTE
+  }
 };
 
 /* ---------------------------------------------------------------------
@@ -440,12 +581,15 @@ function getPhaseForWeek(weekNumber) {
 }
 
 function getWeightTargetForWeek(weekNumber) {
-  return WEEKLY_WEIGHTS_BLOQUE1.find(w => w.week === weekNumber) || null;
+  return WEEKLY_WEIGHTS_BLOQUE1.find(w => w.week === weekNumber)
+    || WEEKLY_WEIGHTS_FASE4.find(w => w.week === weekNumber)
+    || null;
 }
 
 function getDaySchedule(weekNumber, dayKey) {
-  const base = WEEKLY_SCHEDULE_BASE[dayKey];
   const phase = getPhaseForWeek(weekNumber);
+  const source = phase.key === "fase4" ? WEEKLY_SCHEDULE_FASE4 : WEEKLY_SCHEDULE_BASE;
+  const base = source[dayKey];
   if (!base) return null;
 
   // Clona superficialmente
@@ -514,11 +658,11 @@ function getDaySchedule(weekNumber, dayKey) {
     }
   }
 
-  if (phase.key === "fase3" || phase.key === "fase4") {
+  if (phase.key === "fase3") {
     day.isGeneralPhase = true;
     day.type = "general";
     day.typeLabel = phase.name;
-    day.meals = phase.key === "fase3" ? MEALS_FASE3 : MEALS_FASE4;
+    day.meals = MEALS_FASE3;
     day.supplements = daySupplements({ creatina: true, proteina: true });
     day.note = null;
   }
