@@ -108,7 +108,7 @@ function showToast(msg) {
   el.hidden = false;
   el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
+  toastTimer = setTimeout(() => { el.hidden = true; }, msg.length > 60 ? 5000 : 2600);
 }
 
 function openModal(titleHTML, bodyHTML) {
@@ -1413,7 +1413,7 @@ function renderAjustes() {
 
   $("#signInBtn")?.addEventListener("click", async () => {
     try { await CloudSync.signInWithGoogle(); }
-    catch (e) { showToast("No se pudo iniciar sesión"); }
+    catch (e) { showToast(e?.message || "No se pudo iniciar sesión"); }
   });
   $("#signOutBtn")?.addEventListener("click", async () => {
     await CloudSync.signOutUser();
