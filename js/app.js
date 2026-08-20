@@ -472,11 +472,15 @@ function renderMealsBody(day) {
   return `
     <div class="card">
       <div class="card-row"><h4>Nutrición</h4><span class="badge"><span class="dot" style="background:${m.zoneColor}"></span>${m.label}</span></div>
+      ${m.totalKcal ? `<div class="badge-row" style="margin-top:8px">
+        <span class="badge">🔥 ~${m.totalKcal} kcal/día</span>
+        ${m.macros ? `<span class="badge">${m.macros.protein}g P · ${m.macros.carbs}g H · ${m.macros.fat}g G</span>` : ""}
+      </div>` : ""}
       <div style="margin-top:8px">
         ${m.items.map(it => `
           <div class="meal">
             <div class="meal-tag">${it.meal}</div>
-            <div class="meal-text">${it.text}</div>
+            <div class="meal-text">${it.text}${it.kcal ? ` <span class="meal-kcal">~${it.kcal} kcal</span>` : ""}</div>
           </div>`).join("")}
       </div>
       ${day.note ? `<div class="divider"></div><p class="phase-summary">${day.note}</p>` : ""}
@@ -1058,7 +1062,10 @@ function renderFases() {
         <div class="phase-body">
           <p class="phase-summary">${p.summary}</p>
           <div class="phase-focus">${p.focus.map(f => `<div class="phase-focus-item">${f}</div>`).join("")}</div>
-          <div class="badge-row"><span class="badge">🎯 ${p.kcal}</span></div>
+          <div class="badge-row">
+            <span class="badge">🎯 ${p.kcal}</span>
+            ${p.macroFocus ? `<span class="badge">${p.macroFocus}</span>` : ""}
+          </div>
         </div>
       </div>`;
   });
@@ -1216,6 +1223,25 @@ function renderAjustes() {
           <div class="exercise-note">${sup.brand}</div>
           <div class="exercise-note" style="color:var(--brand-2); margin-top:4px">${sup.dose}</div>
           <div class="exercise-note" style="margin-top:4px">${sup.fn}</div>
+        </div>`).join("")}
+    </div>
+
+    <div class="section-title">Diccionario de calorías</div>
+    <div class="card">
+      <p class="phase-summary" style="margin-bottom:8px">Pesos en crudo/seco — así se pesan en la báscula de cocina.</p>
+      ${Object.values(CALORIE_DICTIONARY).map(group => `
+        <div style="margin-top:12px">
+          <h4 style="font-size:13px">${group.title}</h4>
+          ${group.note ? `<p class="phase-summary" style="margin-top:4px">${group.note}</p>` : ""}
+          ${group.items.map(it => `
+            <div class="exercise">
+              <div>
+                <div class="exercise-name" style="font-size:13px">${it.name}</div>
+                ${it.macro ? `<div class="exercise-note">${it.macro}</div>` : ""}
+                ${it.note ? `<div class="exercise-note" style="color:var(--brand-2); margin-top:2px">${it.note}</div>` : ""}
+              </div>
+              <div class="exercise-set">${it.kcal} kcal</div>
+            </div>`).join("")}
         </div>`).join("")}
     </div>
 
