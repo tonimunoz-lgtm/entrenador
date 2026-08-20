@@ -599,6 +599,18 @@ function renderOnboarding() {
 
   const suggestedStart = dateKey(nextMonday(new Date()));
 
+  const cloudReady = typeof CloudSync !== "undefined" && CloudSync.enabled;
+  const signInCard = cloudReady ? `
+    <div class="card" id="onboardSignInCard" style="border-color: color-mix(in srgb, var(--brand) 40%, var(--border))">
+      <h4>¿Ya tienes cuenta?</h4>
+      <p class="phase-summary" style="margin-top:6px">Si perdiste el móvil o es un dispositivo nuevo, inicia sesión aquí para recuperar todo tu progreso en vez de configurar de cero.</p>
+      <div class="field" style="margin-top:12px"><label>Email</label><input id="obAuthEmail" type="email" placeholder="tu@email.com" autocomplete="email" /></div>
+      <div class="field"><label>Contraseña</label><input id="obAuthPassword" type="password" placeholder="Tu contraseña" autocomplete="current-password" /></div>
+      <button class="btn btn-primary" id="obSignInBtn">Iniciar sesión y recuperar mis datos</button>
+    </div>
+    <div class="divider" style="margin: 18px 0"></div>
+    <p class="phase-summary" style="margin-bottom:10px">O configura el plan desde cero:</p>` : "";
+
   $("#view").innerHTML = `
     <div class="hero">
       <div class="hero-eyebrow">Bienvenido a Forja21</div>
@@ -614,6 +626,8 @@ function renderOnboarding() {
         <span class="badge">💪 Junio · Definición</span>
       </div>
     </div>
+
+    ${signInCard}
 
     <div class="card">
       <h4>Vamos a configurarlo</h4>
@@ -634,6 +648,18 @@ function renderOnboarding() {
         <button type="submit" class="btn btn-primary">Empezar mi plan</button>
       </form>
     </div>`;
+
+  $("#obSignInBtn")?.addEventListener("click", async () => {
+    const email = $("#obAuthEmail").value.trim();
+    const password = $("#obAuthPassword").value;
+    if (!email || !password) { showToast("Escribe tu email y contraseña"); return; }
+    try {
+      await CloudSync.signInWithEmail(email, password);
+      // handleCloudAuthChange se encarga de recuperar los datos y volver a arrancar la app
+    } catch (e) {
+      showToast(translateAuthError(e));
+    }
+  });
 
   $("#onboardForm").addEventListener("submit", (e) => {
     e.preventDefault();
