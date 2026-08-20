@@ -169,6 +169,7 @@ p{ margin:0; }
 .type-quality{ --zc: var(--z3); }
 .type-long{ --zc: var(--z5); }
 .type-general{ --zc: var(--brand); }
+.type-race{ --zc: #FFD84D; }
 
 .daytype-pill{
   display:inline-flex; align-items:center; gap:7px;
