@@ -11,7 +11,8 @@ const PROFILE_DEFAULTS = {
   startWeight: 87.5,
   fcr: 46,                          // frecuencia cardiaca reposo
   fcm: 160,                         // frecuencia cardiaca máxima
-  z2max: 126
+  z2max: 126,
+  notificationsEnabled: false
 };
 
 const HR_ZONES = [
@@ -20,6 +21,12 @@ const HR_ZONES = [
   { key: "z3", label: "Z3 · Tempo", color: "#22C55E", range: "127–137 ppm" },
   { key: "z4", label: "Z4 · Umbral", color: "#F5B400", range: "138–148 ppm" },
   { key: "z5", label: "Z5 · Máximo", color: "#EF4444", range: ">148 ppm" }
+];
+
+// Hitos fijos del calendario real (no dependen de la semana calculada, son fechas de verdad)
+const MILESTONES = [
+  { date: "2027-01-24", icon: "🏁", label: "Mitja Marató de Granollers", desc: "Objetivo: sub 1h 43min a 4:45–4:50 min/km, pesando 75.5 kg." },
+  { date: "2027-06-24", icon: "🏆", label: "Objetivo final (Sant Joan)", desc: "Cuerpo definido: 71–72 kg, abdominales visibles." }
 ];
 
 const SUPPLEMENTS = [
@@ -115,6 +122,9 @@ const PHASES = [
     focus: ["Hidratos solo en desayuno y comida", "HIIT post-pesas (10x30s Z5 + 1' caminando)", "Agua 4 L/día", "Cena clínica de definición"]
   }
 ];
+
+// El plan tiene una duración fija — más allá de esta semana se considera completado.
+const TOTAL_PLAN_WEEKS = PHASES[PHASES.length - 1].weeks[1];
 
 /* ---------------------------------------------------------------------
    HORARIO SEMANAL — FASE 1 y 1B (semanas 1–13)
