@@ -32,6 +32,10 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
 
+  // No tocar peticiones a otros orígenes (Firebase Auth, Firestore, Google) —
+  // tienen su propia lógica de red/streaming que el SW no debe interferir.
+  if (new URL(req.url).origin !== location.origin) return;
+
   // Network-first for navigation requests (keep app fresh), fall back to cache offline.
   if (req.mode === "navigate") {
     event.respondWith(
