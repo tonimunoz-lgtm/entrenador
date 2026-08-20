@@ -72,11 +72,18 @@ const CloudSync = {
     try {
       await fbAuth.signInWithPopup(provider);
     } catch (e) {
-      // Popups bloqueados o no soportados (típico en móvil) → redirección
-      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request"].includes(e.code)) {
+      console.error("Forja21 · Firebase sign-in error:", e.code, e.message);
+      if (e.code === "auth/unauthorized-domain") {
+        // Mensaje claro para el caso más común al desplegar en un dominio nuevo (Vercel).
+        throw new Error("Este dominio no está autorizado en Firebase. Añádelo en Authentication → Settings → Authorized domains.");
+      }
+      // Cualquier otro fallo de popup (bloqueado, no soportado, cerrado, cookies de terceros
+      // bloqueadas en el navegador del móvil...) → probamos con redirección, más fiable en PWA.
+      try {
         await fbAuth.signInWithRedirect(provider);
-      } else {
-        throw e;
+      } catch (e2) {
+        console.error("Forja21 · Firebase redirect error:", e2.code, e2.message);
+        throw e2;
       }
     }
   },
