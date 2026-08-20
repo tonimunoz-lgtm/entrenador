@@ -296,9 +296,10 @@ function computeStats() {
   const today = startOfDay(new Date());
 
   // Peso
-  const weighableWeeks = Math.min(elapsedWeek, WEEKLY_WEIGHTS_BLOQUE1.length);
+  const targetWeeksElapsed = getAllWeightTargetWeeks().filter(w => w <= elapsedWeek);
+  const weighableWeeks = targetWeeksElapsed.length;
   let loggedWeeks = 0, onTargetWeeks = 0, devSum = 0, devCount = 0;
-  for (let w = 1; w <= weighableWeeks; w++) {
+  targetWeeksElapsed.forEach(w => {
     const l = getWeightLog(w);
     const t = getWeightTargetForWeek(w);
     if (l) {
@@ -309,7 +310,7 @@ function computeStats() {
         if (Math.abs(diff) <= 0.25) onTargetWeeks++;
       }
     }
-  }
+  });
   const weightLogPct = weighableWeeks ? (loggedWeeks / weighableWeeks * 100) : 0;
   const weightOnTargetPct = loggedWeeks ? (onTargetWeeks / loggedWeeks * 100) : null;
   const avgWeightDev = devCount ? (devSum / devCount) : null;
@@ -437,9 +438,19 @@ function renderTrainingBody(day) {
         </div>
       </div>`).join("") + `</div>`;
   }
+  if (t.items) {
+    html += `<div style="margin-top:10px">` + t.items.map(it => `
+      <div class="exercise">
+        <div>
+          <div class="exercise-name">${it.name}</div>
+          ${it.note ? `<div class="exercise-note">${it.note}</div>` : ""}
+          <a class="exercise-video" href="${exerciseVideoUrl(it.name)}" target="_blank" rel="noopener">▶ Ver ejemplo</a>
+        </div>
+      </div>`).join("") + `</div>`;
+  }
   if (t.cardio) {
     html += `<div class="exercise" style="border-top:1px solid var(--border)">
-      <div><div class="exercise-name">Cardio en cinta</div><div class="exercise-note">${t.cardio}</div></div>
+      <div><div class="exercise-name">Cardio</div><div class="exercise-note">${t.cardio}</div></div>
     </div>`;
   }
   if (t.blocks) {
@@ -941,10 +952,19 @@ function renderMonthGrid() {
     const milestone = milestoneForDate(d);
     const dWeek = getWeekNumber(d);
     const isZoneReviewMon = JS_DOW_TO_KEY[d.getDay()] === "mon" && isZoneReviewWeek(dWeek);
+
+    const badges = [];
+    if (sched) badges.push(`<span class="month-cell-dot" style="background:${dayTypeColor(sched.type)}"></span>`);
+    if (sched?.isWeighDay) badges.push(`<span class="month-cell-icon">⚖️</span>`);
+    if (milestone) badges.push(`<span class="month-cell-icon">${milestone.icon}</span>`);
+    if (isZoneReviewMon) badges.push(`<span class="month-cell-icon">🫀</span>`);
+
+    const titleParts = [milestone?.label, isZoneReviewMon ? "Revisar zonas de FC" : null, sched?.isWeighDay ? "Día de pesaje" : null].filter(Boolean);
+
     html += `
-      <div class="month-cell ${inMonth ? "" : "out"} ${isToday ? "today" : ""} ${milestone ? "milestone" : ""}" data-date="${dateKey(d)}" title="${milestone ? milestone.label : isZoneReviewMon ? "Revisar zonas de FC" : ""}">
+      <div class="month-cell ${inMonth ? "" : "out"} ${isToday ? "today" : ""} ${milestone ? "milestone" : ""}" data-date="${dateKey(d)}" title="${titleParts.join(" · ")}">
         <span class="month-cell-num">${d.getDate()}</span>
-        ${milestone ? `<span class="month-cell-icon">${milestone.icon}</span>` : isZoneReviewMon ? `<span class="month-cell-icon">🫀</span>` : sched?.isWeighDay ? `<span class="month-cell-icon">⚖️</span>` : sched ? `<span class="month-cell-dot" style="background:${dayTypeColor(sched.type)}"></span>` : ""}
+        <span class="month-cell-badges">${badges.join("")}</span>
       </div>`;
   }
   html += `</div>
@@ -1089,8 +1109,8 @@ function renderPeso() {
   if (state.weights.length === 0) {
     html += `<div class="empty">Aún no has registrado ningún peso.<br/>Se pesará cada sábado en ayunas.</div>`;
   } else {
-    const upTo = Math.min(Math.max(week, 1), WEEKLY_WEIGHTS_BLOQUE1.length);
-    for (let w = upTo; w >= 1; w--) {
+    const weeksToShow = getAllWeightTargetWeeks().filter(w => w <= Math.max(week, 1)).reverse();
+    weeksToShow.forEach(w => {
       const t = getWeightTargetForWeek(w);
       const l = getWeightLog(w);
       const val = l ? l.weight : null;
@@ -1106,7 +1126,7 @@ function renderPeso() {
           </div>
           <div class="wh-val">${val ? val.toFixed(1) + " kg" : "—"}</div>
         </div>`;
-    }
+    });
   }
 
   html += `</div>`;
