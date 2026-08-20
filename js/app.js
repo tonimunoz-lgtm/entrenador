@@ -184,7 +184,7 @@ function maybeSendDailyReminder() {
     const t = getWeightTargetForWeek(week);
     title = "⚖️ Hoy toca báscula";
     body = `En ayunas, antes del café. Objetivo: ${t ? t.weight + " kg" : "—"}.`;
-  } else if (["gym", "quality", "long"].includes(day.type)) {
+  } else if (["gym", "quality", "long", "race"].includes(day.type)) {
     title = `💪 Hoy toca ${day.typeLabel}`;
     body = day.training?.todayDistance || day.training?.title || "Abre Forja21 para ver el detalle de hoy.";
   } else {
@@ -617,14 +617,14 @@ function renderHoy() {
   const day = getDaySchedule(week, dayKey);
   const dk = dateKey(date);
   const phase = day.phase;
-  const isTrainingDay = ["gym", "quality", "long"].includes(day.type);
+  const isTrainingDay = ["gym", "quality", "long", "race"].includes(day.type);
   const hasLog = workoutsForDate(dk).length > 0;
 
   // ---- stats ----
   const pct = weightProgressPct();
   let trainingStatTile;
   if (!day.isGeneralPhase) {
-    const trainKeys = trainingDayKeysForWeek();
+    const trainKeys = trainingDayKeysForWeek(week);
     const wd = weekDates(week).filter(d => trainKeys.includes(d.key) && startOfDay(d.date) <= startOfDay(date));
     const done = wd.filter(d => workoutsForDate(dateKey(d.date)).length > 0).length;
     trainingStatTile = `<div class="stat-tile"><div class="stat-tile-val">${done}/${trainKeys.length}</div><div class="stat-tile-label">Entrenos semana</div></div>`;
@@ -831,7 +831,7 @@ function renderMonthGrid() {
 }
 
 function dayTypeColor(type) {
-  return { rest: "#6B7784", active: "#3E7BFA", gym: "#F5B400", quality: "#22C55E", long: "#EF4444", general: "#3E7BFA" }[type] || "#6B7784";
+  return { rest: "#6B7784", active: "#3E7BFA", gym: "#F5B400", quality: "#22C55E", long: "#EF4444", general: "#3E7BFA", race: "#FFD84D" }[type] || "#6B7784";
 }
 
 function openDayModal(dateObj) {
@@ -854,7 +854,7 @@ function openDayModal(dateObj) {
     `<div>${milestoneBanner}${fullDayHTML(d, dateObj)}</div>`
   );
   bindSuppHandlers();
-  const trainKeys = ["gym", "quality", "long"];
+  const trainKeys = ["gym", "quality", "long", "race"];
   if (trainKeys.includes(d.type)) {
     const sheet = $(".modal-sheet");
     const btn = document.createElement("button");
