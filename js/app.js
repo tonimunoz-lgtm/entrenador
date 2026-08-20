@@ -1093,6 +1093,14 @@ function openDayModal(dateObj) {
   }
 }
 
+function phaseCalorieBalance(p) {
+  const weeks = p.weeks[1] - p.weeks[0] + 1;
+  const totalChangeKg = p.weightTo - p.weightFrom; // negativo = pérdida, positivo = ganancia
+  const weeklyChangeKg = totalChangeKg / weeks;
+  const dailyKcalBalance = Math.round((weeklyChangeKg * 7700) / 7);
+  return { weeklyChangeKg, dailyKcalBalance, isLoss: totalChangeKg < 0 };
+}
+
 function renderFases() {
   const { week } = todayInfo();
   let html = "";
@@ -1101,6 +1109,9 @@ function renderFases() {
     const isPast = week > p.weeks[1];
     const span = p.weeks[1] - p.weeks[0] + 1;
     const pct = isPast ? 100 : isCurrent ? Math.min(100, Math.max(4, ((week - p.weeks[0] + 1) / span) * 100)) : 0;
+    const bal = phaseCalorieBalance(p);
+    const balAbsKcal = Math.abs(bal.dailyKcalBalance);
+    const balAbsGrams = Math.round(Math.abs(bal.weeklyChangeKg) * 1000);
     html += `
       <div class="card phase-card ${isCurrent ? "open" : ""}" data-phase="${p.key}">
         <div class="phase-head">
@@ -1118,6 +1129,15 @@ function renderFases() {
           <div class="badge-row">
             <span class="badge">🎯 ${p.kcal}</span>
             ${p.macroFocus ? `<span class="badge">${p.macroFocus}</span>` : ""}
+          </div>
+          <div class="calorie-balance-card">
+            <div class="calorie-balance-head">⚖️ Balance calórico estimado</div>
+            <p class="phase-summary" style="margin-top:4px">
+              ${bal.isLoss
+                ? `Un déficit medio de <b style="color:var(--text)">~${balAbsKcal} kcal/día</b> explica la pérdida prevista de <b style="color:var(--text)">~${balAbsGrams} g/semana</b>.`
+                : `Un superávit medio de <b style="color:var(--text)">~${balAbsKcal} kcal/día</b> explica la ganancia prevista de <b style="color:var(--text)">~${balAbsGrams} g/semana</b>.`}
+            </p>
+            <p class="phase-summary" style="margin-top:4px; font-size:11px">Calculado a partir del objetivo de báscula de esta fase (1 kg ≈ 7.700 kcal) — es una estimación, no una medición real.</p>
           </div>
         </div>
       </div>`;
@@ -1313,10 +1333,14 @@ function renderAjustes() {
     <div class="card">
       ${SUPPLEMENT_DETAILS.map(sup => `
         <div class="exercise" style="display:block">
-          <div class="exercise-name">${sup.name}</div>
+          <div class="card-row" style="align-items:flex-start">
+            <div class="exercise-name">${sup.name}</div>
+            <span class="badge" style="flex:none">${sup.kcal} kcal</span>
+          </div>
           <div class="exercise-note">${sup.brand}</div>
           <div class="exercise-note" style="color:var(--brand-2); margin-top:4px">${sup.dose}</div>
           <div class="exercise-note" style="margin-top:4px">${sup.fn}</div>
+          ${sup.kcalNote ? `<div class="exercise-note" style="margin-top:4px; font-style:italic">${sup.kcalNote}</div>` : ""}
         </div>`).join("")}
     </div>
 
