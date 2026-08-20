@@ -338,6 +338,7 @@ p{ margin:0; }
 .month-cell-icon{ font-size:8.5px; line-height:1; flex:none; }
 .month-cell.milestone{ border-color: color-mix(in srgb, var(--z4) 55%, var(--border)); background: color-mix(in srgb, var(--z4) 10%, var(--surface)); }
 .month-legend{ display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+.phase-legend{ display:flex; flex-wrap:wrap; gap:10px; margin: -2px 0 10px; }
 .legend-item{ display:flex; align-items:center; gap:5px; font-size:10.5px; color: var(--text-muted); }
 .legend-item i{ width:7px; height:7px; border-radius:50%; display:inline-block; }
 
