@@ -16,11 +16,11 @@ const PROFILE_DEFAULTS = {
 };
 
 const HR_ZONES = [
-  { key: "z1", label: "Z1 · Muy suave", color: "#6B7784", range: "<115 ppm" },
-  { key: "z2", label: "Z2 · Aeróbico (base)", color: "#3E7BFA", range: "115–126 ppm" },
-  { key: "z3", label: "Z3 · Tempo", color: "#22C55E", range: "127–137 ppm" },
-  { key: "z4", label: "Z4 · Umbral", color: "#F5B400", range: "138–148 ppm" },
-  { key: "z5", label: "Z5 · Máximo", color: "#EF4444", range: ">148 ppm" }
+  { key: "z1", label: "Z1 · Muy suave", color: "#6B7784", range: "<115 ppm", min: null, max: 115 },
+  { key: "z2", label: "Z2 · Aeróbico (base)", color: "#3E7BFA", range: "115–126 ppm", min: 115, max: 126 },
+  { key: "z3", label: "Z3 · Tempo", color: "#22C55E", range: "127–137 ppm", min: 127, max: 137 },
+  { key: "z4", label: "Z4 · Umbral", color: "#F5B400", range: "138–148 ppm", min: 138, max: 148 },
+  { key: "z5", label: "Z5 · Máximo", color: "#EF4444", range: ">148 ppm", min: 148, max: null }
 ];
 
 // Hitos fijos del calendario real (no dependen de la semana calculada, son fechas de verdad)
@@ -126,6 +126,12 @@ const PHASES = [
 // El plan tiene una duración fija — más allá de esta semana se considera completado.
 const TOTAL_PLAN_WEEKS = PHASES[PHASES.length - 1].weeks[1];
 const RACE_WEEK = PHASES.find(p => p.raceWeek)?.raceWeek || 22;
+
+// Cada cuántas semanas conviene revisar las zonas de FC (FCR/FCM cambian con la forma física)
+const ZONE_REVIEW_INTERVAL_WEEKS = 4;
+function isZoneReviewWeek(weekNumber) {
+  return weekNumber >= 1 && (weekNumber - 1) % ZONE_REVIEW_INTERVAL_WEEKS === 0;
+}
 
 /* ---------------------------------------------------------------------
    HORARIO SEMANAL — FASE 1 y 1B (semanas 1–13)
