@@ -380,15 +380,38 @@
   // Gesto de "mirar a un lado y volver" — alterna al azar entre izquierda y
   // derecha, mucho más espaciado que el parpadeo para que no se sienta
   // inquieta. También respeta el cerrojo mascotBusy.
+  // Barrido rápido "mira a los dos lados" — variante ocasional, más viva,
+  // del gesto de mirar a un lado. Centro → izquierda → centro → derecha → centro.
+  function playQuickLookAround(img) {
+    const frames = ["mirasuave1", "curioso", "mirasuave2", "curioso"];
+    let i = 0;
+    img.src = MASCOT_POSES[frames[0]];
+    const t = setInterval(() => {
+      i++;
+      if (i >= frames.length) {
+        clearInterval(t);
+        if (currentMascotPose === MASCOT_DEFAULT_POSE) img.src = MASCOT_POSES[MASCOT_DEFAULT_POSE];
+        mascotBusy = false;
+        return;
+      }
+      img.src = MASCOT_POSES[frames[i]];
+    }, 160);
+  }
+
   function startIdleGestures() {
     if (gestureTimer) return;
     gestureTimer = setInterval(() => {
       if (currentMascotPose !== MASCOT_DEFAULT_POSE || mascotBusy) return;
       const img = $("#chispaImg");
       if (!img) return;
-      const side = Math.random() < 0.5 ? "mirasuave1" : "mirasuave2";
-      if (!MASCOT_POSES[side]) return;
       mascotBusy = true;
+      // 1 de cada 4 veces, aprox., hace el barrido rápido a los dos lados;
+      // el resto, el vistazo simple y algo más pausado de siempre.
+      if (Math.random() < 0.25) {
+        playQuickLookAround(img);
+        return;
+      }
+      const side = Math.random() < 0.5 ? "mirasuave1" : "mirasuave2";
       img.src = MASCOT_POSES[side];
       setTimeout(() => {
         if (currentMascotPose === MASCOT_DEFAULT_POSE && img) img.src = MASCOT_POSES[MASCOT_DEFAULT_POSE];
