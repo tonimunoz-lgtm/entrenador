@@ -575,8 +575,12 @@
     /* Mascota */
     .chispa-widget{ position: fixed; right: 16px; bottom: calc(78px + var(--safe-bottom)); z-index: 45; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
     .chispa-avatar{ width:64px; height:64px; border:none; background:transparent; padding:0; cursor:pointer; animation: chispaBounce 3.4s ease-in-out infinite; }
-    .chispa-avatar img{ width:100%; height:100%; object-fit:contain; display:block; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.4)); }
+    .chispa-avatar img{
+      width:100%; height:100%; object-fit:contain; display:block; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.4));
+      animation: chispaBlink 4.5s ease-in-out infinite; transform-origin: 50% 55%;
+    }
     @keyframes chispaBounce{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-5px); } }
+    @keyframes chispaBlink{ 0%,91%,100%{ transform: scaleY(1); } 94%{ transform: scaleY(0.08); } 97%{ transform: scaleY(1); } }
     .chispa-widget.celebrate .chispa-avatar{ animation: chispaCelebrate 0.6s ease-in-out 3; }
     @keyframes chispaCelebrate{ 0%,100%{ transform: rotate(0deg) scale(1); } 30%{ transform: rotate(-12deg) scale(1.08); } 60%{ transform: rotate(10deg) scale(1.08); } }
     .chispa-bubble{
