@@ -1,4 +1,4 @@
-const CACHE_NAME = "forja21-v8";
+const CACHE_NAME = "forja21-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
