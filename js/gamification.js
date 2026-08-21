@@ -368,7 +368,7 @@
       setTimeout(() => {
         if (currentMascotPose === MASCOT_DEFAULT_POSE && img) img.src = MASCOT_POSES[MASCOT_DEFAULT_POSE];
       }, 160);
-    }, 4500);
+    }, 3000);
   }
 
   function setMascotMessage(text, opts) {
