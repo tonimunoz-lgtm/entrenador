@@ -260,41 +260,41 @@
      MASCOTA "CHISPA"
      ========================================================================= */
   const MASCOT_POSES = {
-    curioso: "icons/mascota/chispa-curioso.png?v=2",     // reposo / saludo genérico
-    curiosoBlink: "icons/mascota/chispa-curioso-blink.png?v=2", // parpadeo real de reposo
-    idea: "icons/mascota/chispa-idea.png?v=2",           // "empecemos racha nueva" / consejos
-    ok: "icons/mascota/chispa-ok.png?v=2",               // éxito — sesión registrada, racha alta
-    pesao: "icons/mascota/chispa-pesao.png?v=2",         // el aviso de "llevas días sin marcar nada"
-    telefono: "icons/mascota/chispa-telefono.png?v=2",   // saludo de última hora del día
-    mirasuave1: "icons/mascota/chispa-mirasuave1.png?v=2", // variante de reposo — mirada casual
-    mirasuave2: "icons/mascota/chispa-mirasuave2.png?v=2"  // variante de reposo — mirada casual
+    curioso: "icons/mascota/chispa-curioso.png?v=3",     // reposo / saludo genérico
+    curiosoBlink: "icons/mascota/chispa-curioso-blink.png?v=3", // parpadeo real de reposo
+    idea: "icons/mascota/chispa-idea.png?v=3",           // "empecemos racha nueva" / consejos
+    ok: "icons/mascota/chispa-ok.png?v=3",               // éxito — sesión registrada, racha alta
+    pesao: "icons/mascota/chispa-pesao.png?v=3",         // el aviso de "llevas días sin marcar nada"
+    telefono: "icons/mascota/chispa-telefono.png?v=3",   // saludo de última hora del día
+    mirasuave1: "icons/mascota/chispa-mirasuave1.png?v=3", // variante de reposo — mirada casual
+    mirasuave2: "icons/mascota/chispa-mirasuave2.png?v=3"  // variante de reposo — mirada casual
   };
   const MASCOT_DEFAULT_POSE = "curioso";
   // Secuencia de vuelo — se usa como pequeña animación (flipbook) en la
   // celebración de insignias, en vez de una sola imagen fija.
   const MASCOT_FLY_FRAMES = [
-    "icons/mascota/chispa-vuelo1.png?v=2",
-    "icons/mascota/chispa-vuelo2.png?v=2",
-    "icons/mascota/chispa-vuelo3.png?v=2",
-    "icons/mascota/chispa-vuelo4.png?v=2",
-    "icons/mascota/chispa-vuelo-feliz.png?v=2",
-    "icons/mascota/chispa-vuelo-rapido.png?v=2"
+    "icons/mascota/chispa-vuelo1.png?v=3",
+    "icons/mascota/chispa-vuelo2.png?v=3",
+    "icons/mascota/chispa-vuelo3.png?v=3",
+    "icons/mascota/chispa-vuelo4.png?v=3",
+    "icons/mascota/chispa-vuelo-feliz.png?v=3",
+    "icons/mascota/chispa-vuelo-rapido.png?v=3"
   ];
   // Secuencia completa de "saca el cartel, lo agita, se aburre y lo guarda"
   // — se reproduce una vez cada vez que Chispa muestra la pose "pesao".
   const MASCOT_PESAO_FRAMES = [
-    "icons/mascota/chispa-pesao-idle.png?v=2",
-    "icons/mascota/chispa-pesao-raise.png?v=2",
-    "icons/mascota/chispa-pesao-up1.png?v=2",
-    "icons/mascota/chispa-pesao-up2.png?v=2",
-    "icons/mascota/chispa-pesao-up3.png?v=2",
-    "icons/mascota/chispa-pesao-up4.png?v=2",
-    "icons/mascota/chispa-pesao-up5.png?v=2",
-    "icons/mascota/chispa-pesao-up3.png?v=2",
-    "icons/mascota/chispa-pesao-bored.png?v=2",
-    "icons/mascota/chispa-pesao-bored.png?v=2",
-    "icons/mascota/chispa-pesao-lower.png?v=2",
-    "icons/mascota/chispa-pesao-end.png?v=2"
+    "icons/mascota/chispa-pesao-idle.png?v=3",
+    "icons/mascota/chispa-pesao-raise.png?v=3",
+    "icons/mascota/chispa-pesao-up1.png?v=3",
+    "icons/mascota/chispa-pesao-up2.png?v=3",
+    "icons/mascota/chispa-pesao-up3.png?v=3",
+    "icons/mascota/chispa-pesao-up4.png?v=3",
+    "icons/mascota/chispa-pesao-up5.png?v=3",
+    "icons/mascota/chispa-pesao-up3.png?v=3",
+    "icons/mascota/chispa-pesao-bored.png?v=3",
+    "icons/mascota/chispa-pesao-bored.png?v=3",
+    "icons/mascota/chispa-pesao-lower.png?v=3",
+    "icons/mascota/chispa-pesao-end.png?v=3"
   ];
 
   const MSG = {
@@ -328,7 +328,7 @@
     document.body.appendChild(mascotEl);
     $("#chispaAvatar").addEventListener("click", () => {
       const m = pickContextualMessage();
-      setMascotMessage(m.text, { pose: m.pose });
+      setMascotMessage(m.text, { pose: "pesao" }); // al tocarla, siempre la animación completa — más divertido
     });
     startBlinking();
     return mascotEl;
