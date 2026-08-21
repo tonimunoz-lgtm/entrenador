@@ -650,8 +650,13 @@
     .gami-streak-chip b{ color: var(--z4); }
 
     /* Mascota */
-    .chispa-widget{ position: fixed; right: 16px; bottom: calc(78px + var(--safe-bottom)); z-index: 45; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
-    .chispa-avatar{ width:64px; height:64px; border:none; background:transparent; padding:0; cursor:pointer; animation: chispaBounce 3.4s ease-in-out infinite; }
+    .chispa-widget{ position: fixed; right: 16px; bottom: calc(78px + var(--safe-bottom)); z-index: 45; display:flex; flex-direction:column; align-items:flex-end; gap:8px; -webkit-tap-highlight-color: transparent; }
+    .chispa-avatar{
+      width:64px; height:64px; border:none; background:transparent; padding:0; cursor:pointer;
+      animation: chispaBounce 3.4s ease-in-out infinite;
+      -webkit-tap-highlight-color: transparent; outline: none; user-select: none; -webkit-user-select: none;
+    }
+    .chispa-avatar:focus{ outline: none; }
     .chispa-avatar img{
       width:100%; height:100%; object-fit:contain; display:block; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.4));
     }
