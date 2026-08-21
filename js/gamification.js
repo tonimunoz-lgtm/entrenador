@@ -261,17 +261,45 @@
      ========================================================================= */
   const MASCOT_POSES = {
     curioso: "icons/mascota/chispa-curioso.png",     // reposo / saludo genérico
+    curiosoBlink: "icons/mascota/chispa-curioso-blink.png", // parpadeo real de reposo
     idea: "icons/mascota/chispa-idea.png",           // "empecemos racha nueva" / consejos
     ok: "icons/mascota/chispa-ok.png",               // éxito — sesión registrada, racha alta
     pesao: "icons/mascota/chispa-pesao.png",         // el aviso de "llevas días sin marcar nada"
-    salto: "icons/mascota/chispa-salto.png",         // celebración grande al desbloquear insignia
-    telefono: "icons/mascota/chispa-telefono.png"    // saludo de última hora del día
+    telefono: "icons/mascota/chispa-telefono.png",   // saludo de última hora del día
+    mirasuave1: "icons/mascota/chispa-mirasuave1.png", // variante de reposo — mirada casual
+    mirasuave2: "icons/mascota/chispa-mirasuave2.png"  // variante de reposo — mirada casual
   };
   const MASCOT_DEFAULT_POSE = "curioso";
+  // Secuencia de vuelo — se usa como pequeña animación (flipbook) en la
+  // celebración de insignias, en vez de una sola imagen fija.
+  const MASCOT_FLY_FRAMES = [
+    "icons/mascota/chispa-vuelo1.png",
+    "icons/mascota/chispa-vuelo2.png",
+    "icons/mascota/chispa-vuelo3.png",
+    "icons/mascota/chispa-vuelo4.png",
+    "icons/mascota/chispa-vuelo-feliz.png",
+    "icons/mascota/chispa-vuelo-rapido.png"
+  ];
+  // Secuencia completa de "saca el cartel, lo agita, se aburre y lo guarda"
+  // — se reproduce una vez cada vez que Chispa muestra la pose "pesao".
+  const MASCOT_PESAO_FRAMES = [
+    "icons/mascota/chispa-pesao-idle.png",
+    "icons/mascota/chispa-pesao-raise.png",
+    "icons/mascota/chispa-pesao-up1.png",
+    "icons/mascota/chispa-pesao-up2.png",
+    "icons/mascota/chispa-pesao-up3.png",
+    "icons/mascota/chispa-pesao-up4.png",
+    "icons/mascota/chispa-pesao-up5.png",
+    "icons/mascota/chispa-pesao-up3.png",
+    "icons/mascota/chispa-pesao-bored.png",
+    "icons/mascota/chispa-pesao-bored.png",
+    "icons/mascota/chispa-pesao-lower.png",
+    "icons/mascota/chispa-pesao-end.png"
+  ];
 
   const MSG = {
     greetingMorning: { pose: "curioso", texts: ["¡Buenos días! Hoy toca darlo todo 💪", "Arriba, campeón — vamos a por hoy.", "Un café y a la faena — hoy también cuenta."] },
-    greetingAfternoon: { pose: "curioso", texts: ["¿Qué tal el día? Aún puedes dejarlo bien rematado.", "Buenas tardes — ¿ya has visto qué toca hoy?"] },
+    greetingAfternoon: { pose: "mirasuave2", texts: ["¿Qué tal el día? Aún puedes dejarlo bien rematado.", "Buenas tardes — ¿ya has visto qué toca hoy?"] },
     greetingEvening: { pose: "telefono", texts: ["Última llamada del día — no dejes el streak a medias.", "Buenas noches, revisa si te falta algo antes de dormir."] },
     streakHigh: n => ({ pose: "ok", texts: [`🔥 ${n} días seguidos — no lo sueltes ahora.`, `Llevas ${n} días de racha. Esto ya es un hábito de verdad.`] }),
     streakZero: { pose: "idea", texts: ["Empecemos una racha nueva hoy mismo.", "Hoy es un buen día para arrancar racha."] },
@@ -285,6 +313,9 @@
   }
 
   let mascotEl = null;
+  let currentMascotPose = MASCOT_DEFAULT_POSE;
+  let blinkTimer = null;
+
   function ensureMascot() {
     if (mascotEl) return mascotEl;
     mascotEl = document.createElement("div");
@@ -299,13 +330,45 @@
       const m = pickContextualMessage();
       setMascotMessage(m.text, { pose: m.pose });
     });
+    startBlinking();
     return mascotEl;
+  }
+
+  let pesaoAnimTimer = null;
+  function playPesaoAnimation(img) {
+    clearInterval(pesaoAnimTimer);
+    let i = 0;
+    img.src = MASCOT_PESAO_FRAMES[0];
+    pesaoAnimTimer = setInterval(() => {
+      i++;
+      if (i >= MASCOT_PESAO_FRAMES.length) { clearInterval(pesaoAnimTimer); pesaoAnimTimer = null; return; }
+      img.src = MASCOT_PESAO_FRAMES[i];
+    }, 180);
   }
 
   function setMascotPose(pose) {
     ensureMascot();
+    currentMascotPose = pose;
     const img = $("#chispaImg");
-    if (img && MASCOT_POSES[pose]) img.src = MASCOT_POSES[pose];
+    if (!img) return;
+    clearInterval(pesaoAnimTimer); pesaoAnimTimer = null;
+    if (pose === "pesao") { playPesaoAnimation(img); return; }
+    if (MASCOT_POSES[pose]) img.src = MASCOT_POSES[pose];
+  }
+
+  // Parpadeo real con la imagen de ojos cerrados — solo cuando Chispa está
+  // en reposo (pose por defecto), nunca en mitad de un mensaje con otra pose.
+  function startBlinking() {
+    if (blinkTimer) return;
+    blinkTimer = setInterval(() => {
+      if (currentMascotPose !== MASCOT_DEFAULT_POSE) return;
+      const img = $("#chispaImg");
+      if (!img || !MASCOT_POSES.curiosoBlink) return;
+      img.src = MASCOT_POSES.curiosoBlink;
+      setTimeout(() => {
+        if (currentMascotPose === MASCOT_DEFAULT_POSE && img) img.src = MASCOT_POSES[MASCOT_DEFAULT_POSE];
+      }, 160);
+    }, 4500);
   }
 
   function setMascotMessage(text, opts) {
@@ -379,7 +442,7 @@
     overlay.innerHTML = `
       <div class="gami-confetti">${Array.from({ length: 26 }).map((_, i) => `<i style="--i:${i}"></i>`).join("")}</div>
       <div class="gami-celebrate-card">
-        <img class="chispa-big" src="${MASCOT_POSES.salto}" alt="Chispa" />
+        <img class="chispa-big" id="chispaCelebrateImg" src="${MASCOT_FLY_FRAMES[0]}" alt="Chispa" />
         <div class="gami-badge-icon">${badge.icon}</div>
         <div class="gami-celebrate-title">¡Insignia desbloqueada!</div>
         <div class="gami-celebrate-name">${badge.name}</div>
@@ -387,8 +450,22 @@
         <button class="btn btn-primary" id="celebrateClose">Seguir</button>
       </div>`;
     document.body.appendChild(overlay);
-    $("#celebrateClose", overlay).addEventListener("click", () => { overlay.remove(); showNextCelebration(); });
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) { overlay.remove(); showNextCelebration(); } });
+
+    // Pequeña animación de vuelo (flipbook) mientras se ve la celebración.
+    let frame = 0;
+    const flyImg = $("#chispaCelebrateImg", overlay);
+    const flyTimer = setInterval(() => {
+      frame = (frame + 1) % MASCOT_FLY_FRAMES.length;
+      if (flyImg) flyImg.src = MASCOT_FLY_FRAMES[frame];
+    }, 220);
+
+    const closeOverlay = () => {
+      clearInterval(flyTimer);
+      overlay.remove();
+      showNextCelebration();
+    };
+    $("#celebrateClose", overlay).addEventListener("click", closeOverlay);
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeOverlay(); });
   }
 
   /* ==========================================================================
@@ -577,10 +654,8 @@
     .chispa-avatar{ width:64px; height:64px; border:none; background:transparent; padding:0; cursor:pointer; animation: chispaBounce 3.4s ease-in-out infinite; }
     .chispa-avatar img{
       width:100%; height:100%; object-fit:contain; display:block; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.4));
-      animation: chispaBlink 4.5s ease-in-out infinite; transform-origin: 50% 55%;
     }
     @keyframes chispaBounce{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-5px); } }
-    @keyframes chispaBlink{ 0%,91%,100%{ transform: scaleY(1); } 94%{ transform: scaleY(0.08); } 97%{ transform: scaleY(1); } }
     .chispa-widget.celebrate .chispa-avatar{ animation: chispaCelebrate 0.6s ease-in-out 3; }
     @keyframes chispaCelebrate{ 0%,100%{ transform: rotate(0deg) scale(1); } 30%{ transform: rotate(-12deg) scale(1.08); } 60%{ transform: rotate(10deg) scale(1.08); } }
     .chispa-bubble{
