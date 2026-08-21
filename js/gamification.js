@@ -260,41 +260,41 @@
      MASCOTA "CHISPA"
      ========================================================================= */
   const MASCOT_POSES = {
-    curioso: "icons/mascota/chispa-curioso.png?v=3",     // reposo / saludo genérico
-    curiosoBlink: "icons/mascota/chispa-curioso-blink.png?v=3", // parpadeo real de reposo
-    idea: "icons/mascota/chispa-idea.png?v=3",           // "empecemos racha nueva" / consejos
-    ok: "icons/mascota/chispa-ok.png?v=3",               // éxito — sesión registrada, racha alta
-    pesao: "icons/mascota/chispa-pesao.png?v=3",         // el aviso de "llevas días sin marcar nada"
-    telefono: "icons/mascota/chispa-telefono.png?v=3",   // saludo de última hora del día
-    mirasuave1: "icons/mascota/chispa-mirasuave1.png?v=3", // variante de reposo — mirada casual
-    mirasuave2: "icons/mascota/chispa-mirasuave2.png?v=3"  // variante de reposo — mirada casual
+    curioso: "icons/mascota/chispa-curioso.png?v=4",     // reposo / saludo genérico
+    curiosoBlink: "icons/mascota/chispa-curioso-blink.png?v=4", // parpadeo real de reposo
+    idea: "icons/mascota/chispa-idea.png?v=4",           // "empecemos racha nueva" / consejos
+    ok: "icons/mascota/chispa-ok.png?v=4",               // éxito — sesión registrada, racha alta
+    pesao: "icons/mascota/chispa-pesao.png?v=4",         // el aviso de "llevas días sin marcar nada"
+    telefono: "icons/mascota/chispa-telefono.png?v=4",   // saludo de última hora del día
+    mirasuave1: "icons/mascota/chispa-mirasuave1.png?v=4", // variante de reposo — mirada casual
+    mirasuave2: "icons/mascota/chispa-mirasuave2.png?v=4"  // variante de reposo — mirada casual
   };
   const MASCOT_DEFAULT_POSE = "curioso";
   // Secuencia de vuelo — se usa como pequeña animación (flipbook) en la
   // celebración de insignias, en vez de una sola imagen fija.
   const MASCOT_FLY_FRAMES = [
-    "icons/mascota/chispa-vuelo1.png?v=3",
-    "icons/mascota/chispa-vuelo2.png?v=3",
-    "icons/mascota/chispa-vuelo3.png?v=3",
-    "icons/mascota/chispa-vuelo4.png?v=3",
-    "icons/mascota/chispa-vuelo-feliz.png?v=3",
-    "icons/mascota/chispa-vuelo-rapido.png?v=3"
+    "icons/mascota/chispa-vuelo1.png?v=4",
+    "icons/mascota/chispa-vuelo2.png?v=4",
+    "icons/mascota/chispa-vuelo3.png?v=4",
+    "icons/mascota/chispa-vuelo4.png?v=4",
+    "icons/mascota/chispa-vuelo-feliz.png?v=4",
+    "icons/mascota/chispa-vuelo-rapido.png?v=4"
   ];
   // Secuencia completa de "saca el cartel, lo agita, se aburre y lo guarda"
   // — se reproduce una vez cada vez que Chispa muestra la pose "pesao".
   const MASCOT_PESAO_FRAMES = [
-    "icons/mascota/chispa-pesao-idle.png?v=3",
-    "icons/mascota/chispa-pesao-raise.png?v=3",
-    "icons/mascota/chispa-pesao-up1.png?v=3",
-    "icons/mascota/chispa-pesao-up2.png?v=3",
-    "icons/mascota/chispa-pesao-up3.png?v=3",
-    "icons/mascota/chispa-pesao-up4.png?v=3",
-    "icons/mascota/chispa-pesao-up5.png?v=3",
-    "icons/mascota/chispa-pesao-up3.png?v=3",
-    "icons/mascota/chispa-pesao-bored.png?v=3",
-    "icons/mascota/chispa-pesao-bored.png?v=3",
-    "icons/mascota/chispa-pesao-lower.png?v=3",
-    "icons/mascota/chispa-pesao-end.png?v=3"
+    "icons/mascota/chispa-pesao-idle.png?v=4",
+    "icons/mascota/chispa-pesao-raise.png?v=4",
+    "icons/mascota/chispa-pesao-up1.png?v=4",
+    "icons/mascota/chispa-pesao-up2.png?v=4",
+    "icons/mascota/chispa-pesao-up3.png?v=4",
+    "icons/mascota/chispa-pesao-up4.png?v=4",
+    "icons/mascota/chispa-pesao-up5.png?v=4",
+    "icons/mascota/chispa-pesao-up3.png?v=4",
+    "icons/mascota/chispa-pesao-bored.png?v=4",
+    "icons/mascota/chispa-pesao-bored.png?v=4",
+    "icons/mascota/chispa-pesao-lower.png?v=4",
+    "icons/mascota/chispa-pesao-end.png?v=4"
   ];
 
   const MSG = {
@@ -315,6 +315,8 @@
   let mascotEl = null;
   let currentMascotPose = MASCOT_DEFAULT_POSE;
   let blinkTimer = null;
+  let gestureTimer = null;
+  let mascotBusy = false; // true mientras el parpadeo o el giro de cabeza están en curso, para que nunca se pisen
 
   function ensureMascot() {
     if (mascotEl) return mascotEl;
@@ -331,6 +333,7 @@
       setMascotMessage(m.text, { pose: "pesao" }); // al tocarla, siempre la animación completa — más divertido
     });
     startBlinking();
+    startIdleGestures();
     return mascotEl;
   }
 
@@ -357,18 +360,41 @@
   }
 
   // Parpadeo real con la imagen de ojos cerrados — solo cuando Chispa está
-  // en reposo (pose por defecto), nunca en mitad de un mensaje con otra pose.
+  // en reposo (pose por defecto), nunca en mitad de un mensaje con otra pose,
+  // ni a la vez que el giro de cabeza (mascotBusy evita que se pisen).
   function startBlinking() {
     if (blinkTimer) return;
     blinkTimer = setInterval(() => {
-      if (currentMascotPose !== MASCOT_DEFAULT_POSE) return;
+      if (currentMascotPose !== MASCOT_DEFAULT_POSE || mascotBusy) return;
       const img = $("#chispaImg");
       if (!img || !MASCOT_POSES.curiosoBlink) return;
+      mascotBusy = true;
       img.src = MASCOT_POSES.curiosoBlink;
       setTimeout(() => {
         if (currentMascotPose === MASCOT_DEFAULT_POSE && img) img.src = MASCOT_POSES[MASCOT_DEFAULT_POSE];
+        mascotBusy = false;
       }, 160);
     }, 3000);
+  }
+
+  // Gesto de "mirar a un lado y volver" — alterna al azar entre izquierda y
+  // derecha, mucho más espaciado que el parpadeo para que no se sienta
+  // inquieta. También respeta el cerrojo mascotBusy.
+  function startIdleGestures() {
+    if (gestureTimer) return;
+    gestureTimer = setInterval(() => {
+      if (currentMascotPose !== MASCOT_DEFAULT_POSE || mascotBusy) return;
+      const img = $("#chispaImg");
+      if (!img) return;
+      const side = Math.random() < 0.5 ? "mirasuave1" : "mirasuave2";
+      if (!MASCOT_POSES[side]) return;
+      mascotBusy = true;
+      img.src = MASCOT_POSES[side];
+      setTimeout(() => {
+        if (currentMascotPose === MASCOT_DEFAULT_POSE && img) img.src = MASCOT_POSES[MASCOT_DEFAULT_POSE];
+        mascotBusy = false;
+      }, 900);
+    }, 7500);
   }
 
   function setMascotMessage(text, opts) {
