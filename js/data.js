@@ -12,7 +12,8 @@ let PROFILE_DEFAULTS = {
   fcr: 46,                          // frecuencia cardiaca reposo
   fcm: 160,                         // frecuencia cardiaca máxima
   z2max: 126,
-  notificationsEnabled: false
+  notificationsEnabled: false,
+  theme: "classic"
 };
 
 let HR_ZONES = [
