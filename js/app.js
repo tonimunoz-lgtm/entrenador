@@ -39,6 +39,25 @@ function cloudPush(fn) {
   try { Promise.resolve(fn()).catch(() => {}); } catch (e) {}
 }
 
+/* ---------------- Temas de diseño ---------------- */
+const THEMES = [
+  { id: "classic", name: "Clásico", desc: "El diseño actual de Forja21.", swatch: ["#3E7BFA", "#63E6D4", "#171D22"] },
+  { id: "trackside", name: "Trackside", desc: "Energía de pista — negro y verde lima. Inspirado en Nike Training Club.", swatch: ["#D6FF3F", "#0A0A0A", "#141414"] },
+  { id: "aura", name: "Aura", desc: "Calma premium con gradientes suaves. Inspirado en Whoop / Oura.", swatch: ["#31D6C4", "#A98CFF", "#0B0E17"] },
+  { id: "ledger", name: "Ledger", desc: "Modo claro, rápido y sin distracciones. Inspirado en Hevy / Strong.", swatch: ["#0F6B4C", "#FAFAF8", "#15181B"] }
+];
+
+function applyTheme(themeId) {
+  document.documentElement.setAttribute("data-theme", themeId || "classic");
+}
+
+function saveTheme(themeId) {
+  applyTheme(themeId);
+  state.settings.theme = themeId;
+  storeSet(STORE_KEYS.settings, state.settings);
+  cloudPush(() => CloudSync.pushSettings(CloudSync.user.uid, state.settings));
+}
+
 function translateAuthError(e) {
   const map = {
     "auth/email-already-in-use": "Ya existe una cuenta con ese email — prueba a iniciar sesión.",
@@ -1332,7 +1351,22 @@ function renderAjustes() {
       </div>`;
   }
 
+  const currentTheme = s.theme || "classic";
   let html = accountHtml + `
+    <div class="section-title">Apariencia</div>
+    <div class="card">
+      <p class="phase-summary" style="margin-bottom:12px">Prueba los 4 diseños y quédate con el que más te guste — todo lo demás sigue funcionando igual.</p>
+      <div class="theme-grid">
+        ${THEMES.map(t => `
+          <button class="theme-option ${t.id === currentTheme ? "active" : ""}" data-theme-id="${t.id}">
+            <span class="theme-swatch">${t.swatch.map(c => `<i style="background:${c}"></i>`).join("")}</span>
+            <span class="theme-name">${t.name}</span>
+            <span class="theme-desc">${t.desc}</span>
+            ${t.id === currentTheme ? `<span class="theme-check">✓</span>` : ""}
+          </button>`).join("")}
+      </div>
+    </div>
+
     <div class="section-title">Tu perfil</div>
     <div class="card">
       <div class="field"><label>Nombre</label><input id="setName" value="${s.name}" /></div>
@@ -1442,6 +1476,14 @@ function renderAjustes() {
     </div>
   `;
   $("#view").innerHTML = html;
+
+  $$(".theme-option").forEach(btn => {
+    btn.addEventListener("click", () => {
+      saveTheme(btn.dataset.themeId);
+      showToast(`Tema "${THEMES.find(t => t.id === btn.dataset.themeId).name}" aplicado`);
+      render();
+    });
+  });
 
   $("#saveSettings").addEventListener("click", () => {
     state.settings.name = $("#setName").value || "Atleta";
@@ -1623,6 +1665,7 @@ if ("serviceWorker" in navigator) {
 
 /* ---------------- Init ---------------- */
 function boot() {
+  applyTheme(state.settings.theme || "classic");
   if (isStandalone()) $("#installBtn").hidden = true;
   if (!state.settings.onboarded) {
     renderOnboarding();
