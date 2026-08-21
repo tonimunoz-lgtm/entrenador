@@ -323,6 +323,18 @@
     return pick(MSG.greetingEvening);
   }
 
+  // ¿Hubo algún día, de los últimos n, en que no se cumplió lo que tocaba
+  // (y no estaba justificado)? Es la misma regla que usa la racha, pero sin
+  // tener en cuenta los congeladores — aquí queremos detectar el despiste
+  // real, aunque la racha en sí no se haya roto todavía.
+  function hasMissedInLastDays(n) {
+    const today = startOfDay(new Date());
+    for (let i = 1; i <= n; i++) {
+      if (!dayRequirementMet(addDays(today, -i))) return true;
+    }
+    return false;
+  }
+
   function maybeProactiveMascotMessage() {
     ensureMascot();
     const today = startOfDay(new Date());
@@ -331,7 +343,8 @@
     storeSet(GK.lastMascotMsg, dk);
     const ctx = buildBadgeContext();
     let msg;
-    if (ctx.streak === 0) msg = pick(MSG.streakZero);
+    if (hasMissedInLastDays(2)) msg = pick(MSG.noActivity2Days);
+    else if (ctx.streak === 0) msg = pick(MSG.streakZero);
     else if (ctx.streak > 0 && ctx.streak % 7 === 0) msg = pick(MSG.streakHigh(ctx.streak));
     else {
       const hour = new Date().getHours();
@@ -607,4 +620,23 @@
     @keyframes gamiFall{ to{ transform: translateY(110vh) rotate(720deg); opacity:0; } }
   `;
   document.head.appendChild(style);
+
+  /* ---------------- Puesta al día inicial ----------------
+     app.js ya ha llamado a boot()/render() una vez, de forma síncrona,
+     ANTES de que este fichero se cargue y pueda envolverlas — así que esa
+     primera pintura se queda sin racha, sin insignias y sin Chispa hasta
+     que el usuario toca algo (cambia de pestaña, etc.). Para que aparezcan
+     ya desde el primer vistazo, repetimos aquí una vez el mismo trabajo
+     que haría el render()/boot() ya envueltos. */
+  try {
+    if (state.settings.onboarded) {
+      injectStreakChip();
+      if (state.activeTab === "hoy") injectExcuseButton();
+      if (state.activeTab === "peso") injectBadgesSection();
+      if (state.activeTab === "calendario") injectExcusedMarkers();
+      ensureMascot();
+      checkAndUnlockBadges();
+      maybeProactiveMascotMessage();
+    }
+  } catch (e) {}
 })();
