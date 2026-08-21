@@ -280,6 +280,19 @@
     "icons/mascota/chispa-vuelo-feliz.png?v=4",
     "icons/mascota/chispa-vuelo-rapido.png?v=4"
   ];
+  // "Saltito y vuelo corto" de reposo — sube por las mismas 5 poses de vuelo
+  // y baja por ellas otra vez, como si despegara un segundo y volviera a posarse.
+  const MASCOT_HOP_FRAMES = [
+    "icons/mascota/chispa-vuelo1.png?v=4",
+    "icons/mascota/chispa-vuelo2.png?v=4",
+    "icons/mascota/chispa-vuelo3.png?v=4",
+    "icons/mascota/chispa-vuelo4.png?v=4",
+    "icons/mascota/chispa-vuelo-feliz.png?v=4",
+    "icons/mascota/chispa-vuelo4.png?v=4",
+    "icons/mascota/chispa-vuelo3.png?v=4",
+    "icons/mascota/chispa-vuelo2.png?v=4",
+    "icons/mascota/chispa-vuelo1.png?v=4"
+  ];
   // Secuencia completa de "saca el cartel, lo agita, se aburre y lo guarda"
   // — se reproduce una vez cada vez que Chispa muestra la pose "pesao".
   const MASCOT_PESAO_FRAMES = [
@@ -334,6 +347,7 @@
     });
     startBlinking();
     startIdleGestures();
+    startIdleHops();
     return mascotEl;
   }
 
@@ -418,6 +432,35 @@
         mascotBusy = false;
       }, 900);
     }, 7500);
+  }
+
+  // Saltito y vuelo corto — el gesto más grande de los de reposo, así que
+  // le damos su propio temporizador, bastante más espaciado que el resto.
+  function playLittleHop(img) {
+    let i = 0;
+    img.src = MASCOT_HOP_FRAMES[0];
+    const t = setInterval(() => {
+      i++;
+      if (i >= MASCOT_HOP_FRAMES.length) {
+        clearInterval(t);
+        if (currentMascotPose === MASCOT_DEFAULT_POSE) img.src = MASCOT_POSES[MASCOT_DEFAULT_POSE];
+        mascotBusy = false;
+        return;
+      }
+      img.src = MASCOT_HOP_FRAMES[i];
+    }, 150);
+  }
+
+  let hopTimer = null;
+  function startIdleHops() {
+    if (hopTimer) return;
+    hopTimer = setInterval(() => {
+      if (currentMascotPose !== MASCOT_DEFAULT_POSE || mascotBusy) return;
+      const img = $("#chispaImg");
+      if (!img) return;
+      mascotBusy = true;
+      playLittleHop(img);
+    }, 22000);
   }
 
   function setMascotMessage(text, opts) {
