@@ -259,34 +259,30 @@
   /* ==========================================================================
      MASCOTA "CHISPA"
      ========================================================================= */
-  const MASCOT_SVG = `
-    <svg viewBox="0 0 100 100" class="chispa-svg">
-      <defs>
-        <linearGradient id="chispaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#3E7BFA"/><stop offset="50%" stop-color="#22C55E"/><stop offset="100%" stop-color="#F5B400"/>
-        </linearGradient>
-      </defs>
-      <circle cx="50" cy="52" r="40" fill="url(#chispaGrad)"/>
-      <g class="chispa-eyes">
-        <ellipse cx="38" cy="46" rx="5" ry="7" fill="#0F1417"/>
-        <ellipse cx="64" cy="46" rx="5" ry="7" fill="#0F1417"/>
-      </g>
-      <path class="chispa-mouth" d="M32 64 Q50 78 68 64" stroke="#0F1417" stroke-width="4" fill="none" stroke-linecap="round"/>
-    </svg>`;
+  const MASCOT_POSES = {
+    curioso: "icons/mascota/chispa-curioso.png",     // reposo / saludo genérico
+    idea: "icons/mascota/chispa-idea.png",           // "empecemos racha nueva" / consejos
+    ok: "icons/mascota/chispa-ok.png",               // éxito — sesión registrada, racha alta
+    pesao: "icons/mascota/chispa-pesao.png",         // el aviso de "llevas días sin marcar nada"
+    salto: "icons/mascota/chispa-salto.png",         // celebración grande al desbloquear insignia
+    telefono: "icons/mascota/chispa-telefono.png"    // saludo de última hora del día
+  };
+  const MASCOT_DEFAULT_POSE = "curioso";
 
   const MSG = {
-    greetingMorning: ["¡Buenos días! Hoy toca darlo todo 💪", "Arriba, campeón — vamos a por hoy.", "Un café y a la faena — hoy también cuenta."],
-    greetingAfternoon: ["¿Qué tal el día? Aún puedes dejarlo bien rematado.", "Buenas tardes — ¿ya has visto qué toca hoy?"],
-    greetingEvening: ["Última llamada del día — no dejes el streak a medias.", "Buenas noches, revisa si te falta algo antes de dormir."],
-    streakHigh: n => [`🔥 ${n} días seguidos — no lo sueltes ahora.`, `Llevas ${n} días de racha. Esto ya es un hábito de verdad.`],
-    streakZero: ["Empecemos una racha nueva hoy mismo.", "Hoy es un buen día para arrancar racha."],
-    streakAtRisk: ["Si hoy no marcas nada, se rompe la racha — aún estás a tiempo.", "Ojo, hoy toca algo para no perder la racha."],
-    postWorkout: ["¡Sesión registrada! Así se hace.", "Anotado — un paso más cerca del objetivo.", "Bien ahí. El cuerpo lo nota aunque tú no lo veas todavía."],
-    badgeUnlocked: name => [`¡Insignia desbloqueada! ${name} 🎉`],
-    noActivity2Days: ["Llevas un par de días sin marcar nada — ¿va todo bien?", "Si necesitas parar unos días, puedes justificarlo en vez de romper la racha."],
-    excusedAck: ["Entendido, descansa y recupérate — lo importante es volver.", "Anotado. Lo que importa es la constancia a largo plazo, no un día suelto."]
+    greetingMorning: { pose: "curioso", texts: ["¡Buenos días! Hoy toca darlo todo 💪", "Arriba, campeón — vamos a por hoy.", "Un café y a la faena — hoy también cuenta."] },
+    greetingAfternoon: { pose: "curioso", texts: ["¿Qué tal el día? Aún puedes dejarlo bien rematado.", "Buenas tardes — ¿ya has visto qué toca hoy?"] },
+    greetingEvening: { pose: "telefono", texts: ["Última llamada del día — no dejes el streak a medias.", "Buenas noches, revisa si te falta algo antes de dormir."] },
+    streakHigh: n => ({ pose: "ok", texts: [`🔥 ${n} días seguidos — no lo sueltes ahora.`, `Llevas ${n} días de racha. Esto ya es un hábito de verdad.`] }),
+    streakZero: { pose: "idea", texts: ["Empecemos una racha nueva hoy mismo.", "Hoy es un buen día para arrancar racha."] },
+    streakAtRisk: { pose: "pesao", texts: ["Si hoy no marcas nada, se rompe la racha — aún estás a tiempo.", "Ojo, hoy toca algo para no perder la racha."] },
+    postWorkout: { pose: "ok", texts: ["¡Sesión registrada! Así se hace.", "Anotado — un paso más cerca del objetivo.", "Bien ahí. El cuerpo lo nota aunque tú no lo veas todavía."] },
+    noActivity2Days: { pose: "pesao", texts: ["Llevas un par de días sin marcar nada — ¿va todo bien?", "Si necesitas parar unos días, puedes justificarlo en vez de romper la racha."] },
+    excusedAck: { pose: "curioso", texts: ["Entendido, descansa y recupérate — lo importante es volver.", "Anotado. Lo que importa es la constancia a largo plazo, no un día suelto."] }
   };
-  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function pickFrom(msgGroup) {
+    return { pose: msgGroup.pose, text: msgGroup.texts[Math.floor(Math.random() * msgGroup.texts.length)] };
+  }
 
   let mascotEl = null;
   function ensureMascot() {
@@ -295,12 +291,21 @@
     mascotEl.className = "chispa-widget";
     mascotEl.innerHTML = `
       <div class="chispa-bubble" id="chispaBubble" hidden></div>
-      <button class="chispa-avatar" id="chispaAvatar" aria-label="Chispa">${MASCOT_SVG}</button>`;
+      <button class="chispa-avatar" id="chispaAvatar" aria-label="Chispa">
+        <img id="chispaImg" src="${MASCOT_POSES[MASCOT_DEFAULT_POSE]}" alt="Chispa" />
+      </button>`;
     document.body.appendChild(mascotEl);
     $("#chispaAvatar").addEventListener("click", () => {
-      setMascotMessage(pickContextualMessage());
+      const m = pickContextualMessage();
+      setMascotMessage(m.text, { pose: m.pose });
     });
     return mascotEl;
+  }
+
+  function setMascotPose(pose) {
+    ensureMascot();
+    const img = $("#chispaImg");
+    if (img && MASCOT_POSES[pose]) img.src = MASCOT_POSES[pose];
   }
 
   function setMascotMessage(text, opts) {
@@ -308,19 +313,24 @@
     const bubble = $("#chispaBubble");
     bubble.textContent = text;
     bubble.hidden = false;
+    setMascotPose((opts && opts.pose) || MASCOT_DEFAULT_POSE);
     mascotEl.classList.toggle("celebrate", !!(opts && opts.celebrate));
     clearTimeout(mascotEl._hideTimer);
-    mascotEl._hideTimer = setTimeout(() => { bubble.hidden = true; mascotEl.classList.remove("celebrate"); }, opts && opts.celebrate ? 4600 : 3800);
+    mascotEl._hideTimer = setTimeout(() => {
+      bubble.hidden = true;
+      mascotEl.classList.remove("celebrate");
+      setMascotPose(MASCOT_DEFAULT_POSE);
+    }, opts && opts.celebrate ? 4600 : 3800);
   }
 
   function pickContextualMessage() {
     const ctx = buildBadgeContext();
     const hour = new Date().getHours();
-    if (ctx.streak === 0) return pick(MSG.streakZero);
-    if (ctx.streak >= 3) return pick(MSG.streakHigh(ctx.streak));
-    if (hour < 13) return pick(MSG.greetingMorning);
-    if (hour < 20) return pick(MSG.greetingAfternoon);
-    return pick(MSG.greetingEvening);
+    if (ctx.streak === 0) return pickFrom(MSG.streakZero);
+    if (ctx.streak >= 3) return pickFrom(MSG.streakHigh(ctx.streak));
+    if (hour < 13) return pickFrom(MSG.greetingMorning);
+    if (hour < 20) return pickFrom(MSG.greetingAfternoon);
+    return pickFrom(MSG.greetingEvening);
   }
 
   // ¿Hubo algún día, de los últimos n, en que no se cumplió lo que tocaba
@@ -342,15 +352,15 @@
     if (storeGet(GK.lastMascotMsg, "") === dk) return; // ya hemos saludado hoy
     storeSet(GK.lastMascotMsg, dk);
     const ctx = buildBadgeContext();
-    let msg;
-    if (hasMissedInLastDays(2)) msg = pick(MSG.noActivity2Days);
-    else if (ctx.streak === 0) msg = pick(MSG.streakZero);
-    else if (ctx.streak > 0 && ctx.streak % 7 === 0) msg = pick(MSG.streakHigh(ctx.streak));
+    let m;
+    if (hasMissedInLastDays(2)) m = pickFrom(MSG.noActivity2Days);
+    else if (ctx.streak === 0) m = pickFrom(MSG.streakZero);
+    else if (ctx.streak > 0 && ctx.streak % 7 === 0) m = pickFrom(MSG.streakHigh(ctx.streak));
     else {
       const hour = new Date().getHours();
-      msg = hour < 13 ? pick(MSG.greetingMorning) : hour < 20 ? pick(MSG.greetingAfternoon) : pick(MSG.greetingEvening);
+      m = hour < 13 ? pickFrom(MSG.greetingMorning) : hour < 20 ? pickFrom(MSG.greetingAfternoon) : pickFrom(MSG.greetingEvening);
     }
-    setTimeout(() => setMascotMessage(msg), 900);
+    setTimeout(() => setMascotMessage(m.text, { pose: m.pose }), 900);
   }
 
   /* ---------------- Celebración a pantalla completa ---------------- */
@@ -369,7 +379,7 @@
     overlay.innerHTML = `
       <div class="gami-confetti">${Array.from({ length: 26 }).map((_, i) => `<i style="--i:${i}"></i>`).join("")}</div>
       <div class="gami-celebrate-card">
-        <div class="chispa-big">${MASCOT_SVG}</div>
+        <img class="chispa-big" src="${MASCOT_POSES.salto}" alt="Chispa" />
         <div class="gami-badge-icon">${badge.icon}</div>
         <div class="gami-celebrate-title">¡Insignia desbloqueada!</div>
         <div class="gami-celebrate-name">${badge.name}</div>
@@ -495,7 +505,8 @@
     _logWorkout(entry);
     try {
       checkAndUnlockBadges();
-      setMascotMessage(pick(MSG.postWorkout), { celebrate: false });
+      const m = pickFrom(MSG.postWorkout);
+      setMascotMessage(m.text, { pose: m.pose, celebrate: false });
     } catch (e) {}
   };
 
@@ -563,11 +574,9 @@
 
     /* Mascota */
     .chispa-widget{ position: fixed; right: 16px; bottom: calc(78px + var(--safe-bottom)); z-index: 45; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
-    .chispa-avatar{ width:52px; height:52px; border-radius:50%; border:2px solid var(--surface); background:transparent; padding:0; cursor:pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.35); animation: chispaBounce 3.4s ease-in-out infinite; }
-    .chispa-svg{ width:100%; height:100%; display:block; }
-    .chispa-eyes{ animation: chispaBlink 4.5s infinite; transform-origin: center; }
+    .chispa-avatar{ width:64px; height:64px; border:none; background:transparent; padding:0; cursor:pointer; animation: chispaBounce 3.4s ease-in-out infinite; }
+    .chispa-avatar img{ width:100%; height:100%; object-fit:contain; display:block; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.4)); }
     @keyframes chispaBounce{ 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-5px); } }
-    @keyframes chispaBlink{ 0%,92%,100%{ transform: scaleY(1); } 95%{ transform: scaleY(0.15); } }
     .chispa-widget.celebrate .chispa-avatar{ animation: chispaCelebrate 0.6s ease-in-out 3; }
     @keyframes chispaCelebrate{ 0%,100%{ transform: rotate(0deg) scale(1); } 30%{ transform: rotate(-12deg) scale(1.08); } 60%{ transform: rotate(10deg) scale(1.08); } }
     .chispa-bubble{
@@ -604,7 +613,7 @@
       animation: gamiPopIn 0.35s cubic-bezier(.2,1.4,.4,1);
     }
     @keyframes gamiPopIn{ from{ transform: scale(0.85); opacity:0; } to{ transform: scale(1); opacity:1; } }
-    .chispa-big{ width:88px; height:88px; margin: 0 auto 8px; }
+    .chispa-big{ width:120px; height:120px; object-fit:contain; margin: 0 auto 8px; display:block; filter: drop-shadow(0 10px 16px rgba(0,0,0,0.4)); }
     .gami-badge-icon{ font-size:40px; margin-bottom:6px; }
     .gami-celebrate-title{ font-size:11px; text-transform:uppercase; letter-spacing:1px; color: var(--text-muted); font-weight:700; }
     .gami-celebrate-name{ font-family: var(--font-display); font-size:20px; font-weight:700; margin-top:4px; }
