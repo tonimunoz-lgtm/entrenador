@@ -514,7 +514,7 @@
       bubble.hidden = true;
       mascotEl.classList.remove("celebrate");
       setMascotPose(MASCOT_DEFAULT_POSE);
-    }, opts && opts.celebrate ? 4600 : 3800);
+    }, opts && opts.celebrate ? 4600 : 5800);
   }
 
   function pickContextualMessage() {
