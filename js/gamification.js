@@ -447,7 +447,19 @@
     mummyEl.innerHTML = `<img src="${MASCOT_MUMMY_FRAMES[0]}" alt="" />`;
     document.body.appendChild(mummyEl);
     const img = mummyEl.querySelector("img");
-    requestAnimationFrame(() => { mummyEl.style.transform = "translateX(90px)"; });
+
+    // Calcula la distancia real hasta donde está Chispa, para que cruce
+    // casi toda la pantalla y se desvanezca justo al llegar a su lado.
+    let distance = Math.max(220, window.innerWidth - 150);
+    if (mascotEl) {
+      const mascotRect = mascotEl.getBoundingClientRect();
+      const startRect = mummyEl.getBoundingClientRect();
+      if (mascotRect.width && startRect.width) {
+        distance = Math.max(180, mascotRect.left - startRect.left - 15);
+      }
+    }
+    requestAnimationFrame(() => { mummyEl.style.transform = `translateX(${distance}px)`; });
+
     let i = 0;
     const t = setInterval(() => {
       i++;
@@ -458,7 +470,7 @@
         return;
       }
       img.src = MASCOT_MUMMY_FRAMES[i];
-    }, 45);
+    }, 58);
   }
 
   // Saltito y vuelo corto — el gesto más grande de los de reposo, así que
@@ -771,7 +783,7 @@
     /* Mascota */
     .mummy-runner{
       position: fixed; left: 6px; bottom: calc(74px + var(--safe-bottom)); z-index: 40;
-      width: 58px; pointer-events: none; transition: transform 1.4s linear;
+      width: 58px; pointer-events: none; transition: transform 1.85s linear;
     }
     .mummy-runner img{ width:100%; display:block; }
 
