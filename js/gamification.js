@@ -319,7 +319,22 @@
     streakAtRisk: { pose: "pesao", texts: ["Si hoy no marcas nada, se rompe la racha — aún estás a tiempo.", "Ojo, hoy toca algo para no perder la racha."] },
     postWorkout: { pose: "ok", texts: ["¡Sesión registrada! Así se hace.", "Anotado — un paso más cerca del objetivo.", "Bien ahí. El cuerpo lo nota aunque tú no lo veas todavía."] },
     noActivity2Days: { pose: "pesao", texts: ["Llevas un par de días sin marcar nada — ¿va todo bien?", "Si necesitas parar unos días, puedes justificarlo en vez de romper la racha."] },
-    excusedAck: { pose: "curioso", texts: ["Entendido, descansa y recupérate — lo importante es volver.", "Anotado. Lo que importa es la constancia a largo plazo, no un día suelto."] }
+    excusedAck: { pose: "curioso", texts: ["Entendido, descansa y recupérate — lo importante es volver.", "Anotado. Lo que importa es la constancia a largo plazo, no un día suelto."] },
+    tip: {
+      pose: "idea",
+      texts: [
+        "Recuerda calentar bien antes de cada sesión — las articulaciones te lo agradecerán.",
+        "La hidratación también cuenta como entreno: no esperes a tener sed.",
+        "Dormir bien es tan importante como entrenar — intenta las 7-8 horas.",
+        "Si un día te cuesta arrancar, empieza solo con 10 minutos — casi siempre acabas siguiendo.",
+        "La constancia gana a la intensidad: mejor un entreno flojo que ninguno.",
+        "En los ejercicios nuevos, mejor técnica que peso — el kilo de más siempre puede esperar.",
+        "Un estiramiento suave al acabar ayuda a recuperar más rápido para el día siguiente.",
+        "Si notas una molestia rara (no el cansancio normal), mejor un día de descanso que forzar.",
+        "Pesarte siempre en las mismas condiciones (en ayunas, misma hora) hace que los números sean fiables de verdad.",
+        "Los días de descanso también forman parte del plan — el músculo crece cuando paras, no solo cuando entrenas."
+      ]
+    }
   };
   function pickFrom(msgGroup) {
     return { pose: msgGroup.pose, text: msgGroup.texts[Math.floor(Math.random() * msgGroup.texts.length)] };
@@ -348,7 +363,31 @@
     startBlinking();
     startIdleGestures();
     startIdleHops();
+    startAutonomousTips();
     return mascotEl;
+  }
+
+  // Habla sola de vez en cuando, sin que la toques — como Duo en Duolingo,
+  // pero sin agobiar: solo mientras la pantalla está realmente activa
+  // (no en segundo plano), solo en el panel Hoy, y con un intervalo
+  // bastante espaciado y aleatorio para que no se sienta repetitivo.
+  let tipTimer = null;
+  function startAutonomousTips() {
+    if (tipTimer) return;
+    const scheduleNext = () => {
+      const delay = 55000 + Math.random() * 50000; // entre ~55s y ~105s
+      tipTimer = setTimeout(() => {
+        const canSpeak = document.visibilityState === "visible" &&
+          currentMascotPose === MASCOT_DEFAULT_POSE && !mascotBusy &&
+          typeof state !== "undefined" && state.activeTab === "hoy";
+        if (canSpeak) {
+          const m = pickFrom(MSG.tip);
+          setMascotMessage(m.text, { pose: m.pose });
+        }
+        scheduleNext();
+      }, delay);
+    };
+    scheduleNext();
   }
 
   let pesaoAnimTimer = null;
