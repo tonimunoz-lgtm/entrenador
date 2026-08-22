@@ -427,50 +427,11 @@
       }
       const side = Math.random() < 0.5 ? "mirasuave1" : "mirasuave2";
       img.src = MASCOT_POSES[side];
-      if (side === "mirasuave1" && Math.random() < 0.45) playMummyRun();
       setTimeout(() => {
         if (currentMascotPose === MASCOT_DEFAULT_POSE && img) img.src = MASCOT_POSES[MASCOT_DEFAULT_POSE];
         mascotBusy = false;
       }, 900);
     }, 5000);
-  }
-
-  // Gag ocasional: cuando Chispa mira a la izquierda, a veces (30%) aparece
-  // esta momia cruzando corriendo por la esquina inferior izquierda y se
-  // desvanece sola (la propia plancha de 32 fotogramas trae el desvanecido).
-  const MASCOT_MUMMY_FRAMES = Array.from({ length: 32 }, (_, i) => `icons/mascota/mummy/mummy-${String(i + 1).padStart(2, "0")}.png?v=1`);
-  let mummyEl = null;
-  function playMummyRun() {
-    if (mummyEl) return; // ya hay una corriendo, no dupliques
-    mummyEl = document.createElement("div");
-    mummyEl.className = "mummy-runner";
-    mummyEl.innerHTML = `<img src="${MASCOT_MUMMY_FRAMES[0]}" alt="" />`;
-    document.body.appendChild(mummyEl);
-    const img = mummyEl.querySelector("img");
-
-    // Calcula la distancia real hasta donde está Chispa, para que cruce
-    // casi toda la pantalla y se desvanezca justo al llegar a su lado.
-    let distance = Math.max(220, window.innerWidth - 150);
-    if (mascotEl) {
-      const mascotRect = mascotEl.getBoundingClientRect();
-      const startRect = mummyEl.getBoundingClientRect();
-      if (mascotRect.width && startRect.width) {
-        distance = Math.max(180, mascotRect.left - startRect.left - 15);
-      }
-    }
-    requestAnimationFrame(() => { mummyEl.style.transform = `translateX(${distance}px)`; });
-
-    let i = 0;
-    const t = setInterval(() => {
-      i++;
-      if (i >= MASCOT_MUMMY_FRAMES.length) {
-        clearInterval(t);
-        mummyEl.remove();
-        mummyEl = null;
-        return;
-      }
-      img.src = MASCOT_MUMMY_FRAMES[i];
-    }, 58);
   }
 
   // Saltito y vuelo corto — el gesto más grande de los de reposo, así que
@@ -781,12 +742,6 @@
     .gami-streak-chip b{ color: var(--z4); }
 
     /* Mascota */
-    .mummy-runner{
-      position: fixed; left: 6px; bottom: calc(74px + var(--safe-bottom)); z-index: 40;
-      width: 58px; pointer-events: none; transition: transform 1.85s linear;
-    }
-    .mummy-runner img{ width:100%; display:block; }
-
     .chispa-widget{ position: fixed; right: 16px; bottom: calc(78px + var(--safe-bottom)); z-index: 45; display:flex; flex-direction:column; align-items:flex-end; gap:8px; -webkit-tap-highlight-color: transparent; }
     .chispa-avatar{
       width:64px; height:64px; border:none; background:transparent; padding:0; cursor:pointer;
