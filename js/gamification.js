@@ -427,12 +427,12 @@
       }
       const side = Math.random() < 0.5 ? "mirasuave1" : "mirasuave2";
       img.src = MASCOT_POSES[side];
-      if (side === "mirasuave1" && Math.random() < 0.3) playMummyRun();
+      if (side === "mirasuave1" && Math.random() < 0.45) playMummyRun();
       setTimeout(() => {
         if (currentMascotPose === MASCOT_DEFAULT_POSE && img) img.src = MASCOT_POSES[MASCOT_DEFAULT_POSE];
         mascotBusy = false;
       }, 900);
-    }, 7500);
+    }, 5000);
   }
 
   // Gag ocasional: cuando Chispa mira a la izquierda, a veces (30%) aparece
