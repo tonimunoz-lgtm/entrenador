@@ -1,14 +1,15 @@
 /* ==========================================================================
-   FORJA21 — Generación Groq por etapas
+   FORJA21 — Generación Groq + objetivos semanales locales
 
-   1. Estructura maestra
-   2. Objetivos semanales en bloques de máximo 4
-   3. Semana 1
-   4. Semana 2
-   5. Semana 3
-   6. Semana 4
+   Groq:
+   1. Diseña el plan maestro y sus fases.
+   2. Genera las semanas detalladas.
 
-   Todo se guarda progresivamente.
+   JavaScript:
+   - Construye weeklyTargets de forma determinista a partir del cuestionario
+     y de las fases. Así no dependemos de que la IA devuelva listas largas.
+
+   Todo se guarda progresivamente en Firestore.
    ========================================================================== */
 
 (function () {
@@ -20,25 +21,17 @@
     ms =>
       new Promise(
         resolve =>
-          setTimeout(
-            resolve,
-            ms
-          )
+          setTimeout(resolve, ms)
       );
 
 
-  function emit(
-    callback,
-    data
-  ) {
+  function emit(callback, data) {
 
     if (
       typeof callback ===
       "function"
     ) {
-
       callback(data);
-
     }
 
   }
@@ -51,9 +44,7 @@
   ) {
 
     const token =
-      await user.getIdToken(
-        true
-      );
+      await user.getIdToken(true);
 
 
     for (
@@ -66,53 +57,38 @@
         await fetch(
           "/api/generate-plan",
           {
-
-            method:
-              "POST",
+            method: "POST",
 
             headers: {
-
               "Content-Type":
                 "application/json",
 
               "Authorization":
                 `Bearer ${token}`
-
             },
 
             body:
-              JSON.stringify(
-                payload
-              )
-
+              JSON.stringify(payload)
           }
         );
 
 
-      let body =
-        null;
-
+      let body = null;
 
       try {
-
-        body =
-          await response.json();
-
+        body = await response.json();
       } catch (_) {}
 
 
       if (
         response.ok
       ) {
-
         return body;
-
       }
 
 
       if (
-        response.status ===
-        429
+        response.status === 429
       ) {
 
         const seconds =
@@ -128,15 +104,10 @@
         emit(
           onProgress,
           {
-
-            type:
-              "waiting",
-
+            type: "waiting",
             seconds,
-
             message:
               `Límite gratuito de Groq: continuamos automáticamente en ${seconds} s…`
-
           }
         );
 
@@ -146,18 +117,14 @@
           1000
         );
 
-
         continue;
 
       }
 
 
       throw new Error(
-
         body?.error ||
-
         `No se pudo generar el plan (${response.status}).`
-
       );
 
     }
@@ -169,6 +136,431 @@
 
   }
 
+
+  /* ==========================================================================
+     WEEKLY TARGETS LOCALES
+     ========================================================================== */
+
+  function number(value, fallback = 0) {
+
+    const n =
+      Number(value);
+
+    return Number.isFinite(n)
+      ? n
+      : fallback;
+
+  }
+
+
+  function phaseForWeek(
+    phases,
+    week
+  ) {
+
+    if (
+      !Array.isArray(phases)
+    ) {
+      return null;
+    }
+
+
+    return (
+      phases.find(
+        phase =>
+          week >=
+            number(
+              phase?.weekFrom,
+              1
+            ) &&
+          week <=
+            number(
+              phase?.weekTo,
+              week
+            )
+      ) ||
+      phases[phases.length - 1] ||
+      null
+    );
+
+  }
+
+
+  function availableSessions(
+    onboarding
+  ) {
+
+    const wanted =
+      Math.max(
+        1,
+        Math.round(
+          number(
+            onboarding?.availability
+              ?.sessionsPerWeekWanted,
+            4
+          )
+        )
+      );
+
+
+    const fixedDays =
+      Array.isArray(
+        onboarding?.availability?.days
+      )
+        ? onboarding.availability.days.length
+        : 0;
+
+
+    if (
+      fixedDays > 0
+    ) {
+
+      return Math.min(
+        wanted,
+        fixedDays
+      );
+
+    }
+
+
+    return wanted;
+
+  }
+
+
+  function createLocalWeeklyTargets(
+    plan,
+    onboarding
+  ) {
+
+    const totalWeeks =
+      Math.max(
+        1,
+        Math.round(
+          number(
+            plan?.totalWeeks,
+            1
+          )
+        )
+      );
+
+
+    const goals =
+      Array.isArray(
+        onboarding?.goals
+      )
+        ? onboarding.goals
+        : [];
+
+
+    const runningGoal =
+      goals.includes("race") ||
+      goals.includes("endurance");
+
+
+    const fatLossGoal =
+      goals.includes("fat_loss");
+
+
+    const sessions =
+      availableSessions(
+        onboarding
+      );
+
+
+    /*
+     * Running:
+     * Partimos del volumen REAL declarado.
+     * Si el usuario quiere correr pero declaró 0 km semanales,
+     * usamos una referencia inicial conservadora para que weeklyTargets
+     * no indique 0 km a un plan de carrera.
+     */
+    let runningKm =
+      runningGoal
+        ? number(
+            onboarding?.background
+              ?.runningKmWeek,
+            0
+          )
+        : 0;
+
+
+    if (
+      runningGoal &&
+      runningKm <= 0
+    ) {
+
+      const longest =
+        number(
+          onboarding?.background
+            ?.longestRunKm,
+          0
+        );
+
+
+      runningKm =
+        longest > 0
+          ? Math.max(
+              6,
+              longest * 1.5
+            )
+          : 6;
+
+    }
+
+
+    /*
+     * Peso:
+     * Solo generamos una referencia semanal si existe un objetivo
+     * explícito de pérdida de peso y tenemos peso actual + objetivo.
+     * Se limita la bajada prevista a un ritmo conservador.
+     */
+    const currentWeight =
+      number(
+        onboarding?.profile
+          ?.weightKg,
+        0
+      );
+
+
+    const requestedTargetWeight =
+      number(
+        onboarding?.goalDetails
+          ?.fat_loss
+          ?.targetWeightKg,
+        0
+      );
+
+
+    let weeklyWeightLoss =
+      0;
+
+
+    if (
+      fatLossGoal &&
+      currentWeight > 0 &&
+      requestedTargetWeight > 0 &&
+      requestedTargetWeight <
+        currentWeight
+    ) {
+
+      const requiredLoss =
+        (currentWeight -
+          requestedTargetWeight) /
+        totalWeeks;
+
+
+      const conservativeCap =
+        currentWeight *
+        0.0075;
+
+
+      weeklyWeightLoss =
+        Math.min(
+          requiredLoss,
+          conservativeCap
+        );
+
+    }
+
+
+    const targets =
+      [];
+
+
+    let runningState =
+      runningKm;
+
+
+    for (
+      let week = 1;
+      week <= totalWeeks;
+      week++
+    ) {
+
+      const phase =
+        phaseForWeek(
+          plan?.phases,
+          week
+        );
+
+
+      const phaseFocus =
+        Array.isArray(
+          phase?.focus
+        ) &&
+        phase.focus.length
+
+          ? phase.focus.join(" · ")
+
+          : (
+              phase?.name ||
+              plan?.primaryGoal ||
+              "Progresión general"
+            );
+
+
+      /*
+       * Descarga conservadora:
+       * Si el texto de la fase menciona descarga/recovery o es cada 4ª
+       * semana, reducimos ligeramente el objetivo de kilometraje.
+       *
+       * No es el entrenamiento: sirve como referencia para Groq.
+       */
+      const phaseText =
+        [
+          phase?.name,
+          phase?.summary,
+          phase?.progression
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+
+      const explicitDeload =
+        /descarga|recuperaci[oó]n|deload|taper|puesta a punto/.test(
+          phaseText
+        );
+
+
+      const periodicDeload =
+        week % 4 === 0;
+
+
+      let kmTarget =
+        0;
+
+
+      if (
+        runningGoal
+      ) {
+
+        if (
+          week === 1
+        ) {
+
+          runningState =
+            runningKm;
+
+        } else if (
+          explicitDeload ||
+          periodicDeload
+        ) {
+
+          runningState =
+            Math.max(
+              runningKm,
+              runningState *
+                0.88
+            );
+
+        } else {
+
+          runningState =
+            runningState *
+            1.05;
+
+        }
+
+
+        kmTarget =
+          Math.round(
+            runningState *
+            10
+          ) /
+          10;
+
+      }
+
+
+      let weightTarget =
+        0;
+
+
+      if (
+        weeklyWeightLoss > 0
+      ) {
+
+        weightTarget =
+          Math.max(
+            requestedTargetWeight,
+
+            currentWeight -
+              weeklyWeightLoss *
+              week
+          );
+
+
+        weightTarget =
+          Math.round(
+            weightTarget *
+            10
+          ) /
+          10;
+
+      }
+
+
+      const noteParts =
+        [];
+
+
+      if (
+        phase?.progression
+      ) {
+        noteParts.push(
+          phase.progression
+        );
+      }
+
+
+      if (
+        explicitDeload ||
+        periodicDeload
+      ) {
+        noteParts.push(
+          "Semana de carga controlada/recuperación: priorizar técnica y calidad."
+        );
+      }
+
+
+      targets.push(
+        {
+          week,
+
+          focus:
+            phaseFocus,
+
+          trainingSessions:
+            sessions,
+
+          runningKmApprox:
+            runningGoal
+              ? kmTarget
+              : 0,
+
+          weightTargetKg:
+            fatLossGoal
+              ? weightTarget
+              : 0,
+
+          note:
+            noteParts.join(" ")
+        }
+      );
+
+    }
+
+
+    return targets;
+
+  }
+
+
+  /* ==========================================================================
+     RESUMEN DE SEMANA PREVIA
+     ========================================================================== */
 
   function previousWeekSummary(
     week
@@ -222,24 +614,9 @@
   }
 
 
-  function getCoreFromPlan(
-    plan
-  ) {
-
-    const core =
-      { ...plan };
-
-
-    delete core.weeklyTargets;
-    delete core.firstBlock;
-    delete core.generation;
-    delete core.meta;
-
-
-    return core;
-
-  }
-
+  /* ==========================================================================
+     GENERACIÓN
+     ========================================================================== */
 
   async function generate(
     user,
@@ -250,11 +627,9 @@
     if (
       !user?.uid
     ) {
-
       throw new Error(
         "No hay sesión iniciada."
       );
-
     }
 
 
@@ -274,7 +649,7 @@
 
 
     /* ======================================================================
-       1. PLAN MAESTRO
+       1. ESTRUCTURA MAESTRA
        ====================================================================== */
 
     if (
@@ -284,13 +659,9 @@
       emit(
         onProgress,
         {
-
-          type:
-            "core",
-
+          type: "core",
           message:
             "Analizando objetivos y diseñando las fases…"
-
         }
       );
 
@@ -299,13 +670,11 @@
         await call(
           user,
           {
-
             action:
               "masterCore",
 
             profile:
               onboarding
-
           },
           onProgress
         );
@@ -333,8 +702,8 @@
           weekTo:
             Math.min(
               4,
-              Number(
-                core.totalWeeks ||
+              number(
+                core.totalWeeks,
                 4
               )
             ),
@@ -363,8 +732,8 @@
           targetsDone:
             false,
 
-          completedTargetWeeks:
-            0,
+          targetsSource:
+            "local",
 
           completedWeeks:
             0,
@@ -405,13 +774,11 @@
       emit(
         onProgress,
         {
-
           type:
             "coreDone",
 
           message:
             "✓ Fases y estrategia creadas y guardadas"
-
         }
       );
 
@@ -419,280 +786,91 @@
 
 
     /* ======================================================================
-       2. OBJETIVOS SEMANALES EN BLOQUES DE 4
+       2. WEEKLY TARGETS LOCALES
+
+       IMPORTANTE:
+       Siempre los reconstruimos completos.
+       De esta forma eliminamos restos incompletos de intentos anteriores.
+       ====================================================================== */
+
+    emit(
+      onProgress,
+      {
+        type:
+          "targetsLocal",
+
+        message:
+          "Construyendo la progresión semanal del plan…"
+      }
+    );
+
+
+    plan.weeklyTargets =
+      createLocalWeeklyTargets(
+        plan,
+        onboarding
+      );
+
+
+    plan.generation =
+      {
+
+        ...(plan.generation || {}),
+
+        status:
+          "generating",
+
+        coreDone:
+          true,
+
+        targetsDone:
+          true,
+
+        targetsSource:
+          "local",
+
+        completedTargetWeeks:
+          plan.weeklyTargets.length,
+
+        updatedAt:
+          new Date()
+            .toISOString()
+
+      };
+
+
+    await CloudSync
+      .pushPersonalizedPlan(
+        user.uid,
+        plan
+      );
+
+
+    emit(
+      onProgress,
+      {
+        type:
+          "targetsLocalDone",
+
+        total:
+          plan.weeklyTargets.length,
+
+        message:
+          `✓ Progresión de ${plan.weeklyTargets.length} semanas preparada y guardada`
+      }
+    );
+
+
+    /* ======================================================================
+       3. PRIMERAS SEMANAS DETALLADAS
        ====================================================================== */
 
     const totalWeeks =
-      Number(
-        plan.totalWeeks ||
+      number(
+        plan.totalWeeks,
         0
       );
 
-
-    if (
-      !Array.isArray(
-        plan.weeklyTargets
-      )
-    ) {
-
-      plan.weeklyTargets =
-        [];
-
-    }
-
-
-    if (
-      !plan.generation?.targetsDone ||
-      plan.weeklyTargets.length <
-        totalWeeks
-    ) {
-
-      let completed =
-        plan.weeklyTargets.length;
-
-
-      /*
-       * Si hay datos incompletos de una prueba anterior,
-       * conservamos únicamente el tramo consecutivo
-       * desde la semana 1.
-       */
-
-      const ordered =
-        [...plan.weeklyTargets]
-          .sort(
-            (a, b) =>
-              Number(a.week) -
-              Number(b.week)
-          );
-
-
-      const validPrefix =
-        [];
-
-
-      for (
-        let week = 1;
-        week <= ordered.length;
-        week++
-      ) {
-
-        const found =
-          ordered.find(
-            item =>
-              Number(item.week) ===
-              week
-          );
-
-
-        if (!found) {
-          break;
-        }
-
-
-        validPrefix.push(
-          found
-        );
-
-      }
-
-
-      plan.weeklyTargets =
-        validPrefix;
-
-
-      completed =
-        validPrefix.length;
-
-
-      while (
-        completed <
-        totalWeeks
-      ) {
-
-        const weekFrom =
-          completed +
-          1;
-
-
-        const weekTo =
-          Math.min(
-            weekFrom + 3,
-            totalWeeks
-          );
-
-
-        emit(
-          onProgress,
-          {
-
-            type:
-              "targets",
-
-            weekFrom,
-
-            weekTo,
-
-            totalWeeks,
-
-            message:
-              `Creando progresión: semanas ${weekFrom}–${weekTo} de ${totalWeeks}…`
-
-          }
-        );
-
-
-        const core =
-          getCoreFromPlan(
-            plan
-          );
-
-
-        const response =
-          await call(
-            user,
-            {
-
-              action:
-                "targetsBatch",
-
-              profile:
-                onboarding,
-
-              core,
-
-              weekFrom,
-
-              weekTo,
-
-              previousTargets:
-                plan.weeklyTargets
-
-            },
-            onProgress
-          );
-
-
-        plan.weeklyTargets =
-          [
-            ...plan.weeklyTargets,
-            ...response.weeklyTargets
-          ]
-            .sort(
-              (a, b) =>
-                Number(a.week) -
-                Number(b.week)
-            );
-
-
-        completed =
-          plan.weeklyTargets
-            .length;
-
-
-        plan.generation =
-          {
-
-            ...(plan.generation || {}),
-
-            status:
-              "generating",
-
-            coreDone:
-              true,
-
-            targetsDone:
-              completed ===
-              totalWeeks,
-
-            completedTargetWeeks:
-              completed,
-
-            completedWeeks:
-              plan.firstBlock?.weeks?.length ||
-              0,
-
-            updatedAt:
-              new Date()
-                .toISOString()
-
-          };
-
-
-        await CloudSync
-          .pushPersonalizedPlan(
-            user.uid,
-            plan
-          );
-
-
-        emit(
-          onProgress,
-          {
-
-            type:
-              "targetsBatchDone",
-
-            weekFrom,
-
-            weekTo,
-
-            completed,
-
-            totalWeeks,
-
-            message:
-              `✓ Objetivos de semanas ${weekFrom}–${weekTo} guardados`
-
-          }
-        );
-
-      }
-
-
-      plan.generation =
-        {
-
-          ...(plan.generation || {}),
-
-          targetsDone:
-            true,
-
-          completedTargetWeeks:
-            totalWeeks,
-
-          updatedAt:
-            new Date()
-              .toISOString()
-
-        };
-
-
-      await CloudSync
-        .pushPersonalizedPlan(
-          user.uid,
-          plan
-        );
-
-
-      emit(
-        onProgress,
-        {
-
-          type:
-            "targetsDone",
-
-          message:
-            "✓ Progresión de todo el plan completada"
-
-        }
-      );
-
-    }
-
-
-    /* ======================================================================
-       3. PRIMERAS CUATRO SEMANAS DETALLADAS
-       ====================================================================== */
 
     const totalDetailed =
       Math.min(
@@ -704,7 +882,6 @@
     plan.firstBlock =
       plan.firstBlock ||
       {
-
         blockNumber:
           1,
 
@@ -724,7 +901,6 @@
 
         weeks:
           []
-
       };
 
 
@@ -738,6 +914,39 @@
         [];
 
     }
+
+
+    /*
+     * Eliminamos semanas duplicadas/inválidas de intentos previos.
+     */
+    plan.firstBlock.weeks =
+      plan.firstBlock.weeks
+        .filter(
+          week =>
+            Number.isInteger(
+              number(
+                week?.week,
+                NaN
+              )
+            ) &&
+            number(
+              week?.week,
+              0
+            ) >= 1 &&
+            number(
+              week?.week,
+              0
+            ) <= totalDetailed &&
+            Array.isArray(
+              week?.days
+            ) &&
+            week.days.length === 7
+        )
+        .sort(
+          (a, b) =>
+            number(a.week) -
+            number(b.week)
+        );
 
 
     for (
@@ -754,7 +963,6 @@
       emit(
         onProgress,
         {
-
           type:
             "week",
 
@@ -766,7 +974,6 @@
 
           message:
             `Preparando semana ${weekNumber} de ${totalDetailed}…`
-
         }
       );
 
@@ -775,7 +982,9 @@
         plan.firstBlock.weeks
           .find(
             week =>
-              Number(week.week) ===
+              number(
+                week.week
+              ) ===
               weekNumber - 1
           );
 
@@ -784,7 +993,6 @@
         await call(
           user,
           {
-
             action:
               "week",
 
@@ -800,7 +1008,6 @@
               previousWeekSummary(
                 previous
               )
-
           },
           onProgress
         );
@@ -812,7 +1019,7 @@
           ...plan.firstBlock.weeks
             .filter(
               week =>
-                Number(
+                number(
                   week.week
                 ) !==
                 weekNumber
@@ -823,8 +1030,12 @@
         ]
           .sort(
             (a, b) =>
-              Number(a.week) -
-              Number(b.week)
+              number(
+                a.week
+              ) -
+              number(
+                b.week
+              )
           );
 
 
@@ -860,7 +1071,6 @@
       emit(
         onProgress,
         {
-
           type:
             "weekDone",
 
@@ -872,7 +1082,6 @@
 
           message:
             `✓ Semana ${weekNumber} creada y guardada`
-
         }
       );
 
@@ -897,8 +1106,12 @@
         targetsDone:
           true,
 
+        targetsSource:
+          "local",
+
         completedTargetWeeks:
-          totalWeeks,
+          plan.weeklyTargets
+            .length,
 
         completedWeeks:
           totalDetailed,
@@ -927,13 +1140,11 @@
     emit(
       onProgress,
       {
-
         type:
           "done",
 
         message:
           "✓ Plan completo y guardado"
-
       }
     );
 
@@ -943,16 +1154,12 @@
   }
 
 
-  async function load(
-    user
-  ) {
+  async function load(user) {
 
     if (
       !user?.uid
     ) {
-
       return null;
-
     }
 
 
@@ -966,11 +1173,8 @@
 
   window.AIPlanService =
     {
-
       generate,
-
       load
-
     };
 
 })();
