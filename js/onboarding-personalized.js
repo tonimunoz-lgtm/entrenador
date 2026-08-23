@@ -486,11 +486,14 @@
         if(status) status.textContent=info.message || "Generando…";
 
         let pct=8;
-        if(info.type==="masterDone") pct=20;
-        if(info.type==="week") pct=20 + ((Number(info.week)-1)/4)*80;
-        if(info.type==="weekDone") pct=20 + (Number(info.week)/4)*80;
+        if(info.type==="core") pct=8;
+        if(info.type==="coreDone" || info.type==="masterDone") pct=15;
+        if(info.type==="targetsLocal") pct=18;
+        if(info.type==="targetsLocalDone") pct=25;
+        if(info.type==="week") pct=25 + ((Number(info.week)-1)/4)*75;
+        if(info.type==="weekDone") pct=25 + (Number(info.week)/4)*75;
         if(info.type==="done") pct=100;
-        if(info.type==="resume") pct=20 + (Number(info.completedWeeks||0)/4)*80;
+        if(info.type==="resume") pct=25 + (Number(info.completedWeeks||0)/4)*75;
 
         if(bar) bar.style.width=`${Math.max(4,Math.min(100,pct))}%`;
 
@@ -499,8 +502,10 @@
             detail.textContent="No es un error: estamos respetando la cuota gratuita de Groq. La generación seguirá sola.";
           }else if(info.type==="weekDone"){
             detail.textContent=`La semana ${info.week} ya está guardada en Firestore.`;
-          }else if(info.type==="masterDone"){
-            detail.textContent="La estructura completa del plan ya está guardada.";
+          }else if(info.type==="masterDone" || info.type==="coreDone"){
+            detail.textContent="La estructura y las fases del plan ya están guardadas.";
+          }else if(info.type==="targetsLocalDone"){
+            detail.textContent=`La progresión de ${info.total || "todas las"} semanas se ha calculado y guardado sin consumir cuota de IA.`;
           }else if(info.type==="resume"){
             detail.textContent="He encontrado progreso anterior y no voy a repetirlo.";
           }else{
