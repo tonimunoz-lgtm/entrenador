@@ -184,13 +184,11 @@ async function groq(prompt, maxTokens) {
 
 
   const content =
-  raw?.choices?.[0]?.message?.content ||
-  "";
+    raw?.choices?.[0]?.message?.content ||
+    "";
 
-console.log("GROQ RESPONSE:");
-console.log(content);
 
-return extractJson(content);
+  return extractJson(content);
 
 }
 
@@ -756,18 +754,6 @@ function normalizeWeek(
   weekNumber
 ) {
 
-  if (
-    !Array.isArray(raw?.days) ||
-    raw.days.length !== 7
-  ) {
-
-    throw new Error(
-      `La semana ${weekNumber} no contiene exactamente 7 días.`
-    );
-
-  }
-
-
   const dayNames = [
     "Lunes",
     "Martes",
@@ -778,201 +764,306 @@ function normalizeWeek(
     "Domingo"
   ];
 
+  const normalizeDayName = value =>
+    String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
 
-  return {
+  const aliases = {
+    lunes: 0,
+    monday: 0,
+    martes: 1,
+    tuesday: 1,
+    miercoles: 2,
+    wednesday: 2,
+    jueves: 3,
+    thursday: 3,
+    viernes: 4,
+    friday: 4,
+    sabado: 5,
+    saturday: 5,
+    domingo: 6,
+    sunday: 6
+  };
 
-    week:
-      weekNumber,
+  const incomingDays =
+    Array.isArray(raw?.days)
+      ? raw.days
+      : [];
 
-    focus:
-      raw.focus ||
-      "",
+  const slots =
+    new Array(7).fill(null);
 
-    loadNote:
-      raw.loadNote ||
-      "",
+  const leftovers = [];
 
-    days:
-      raw.days.map(
-        (day, index) => ({
+  for (const day of incomingDays) {
+    const key = normalizeDayName(day?.day);
 
-          day:
-            dayNames[index],
+    const index =
+      Object.prototype.hasOwnProperty.call(
+        aliases,
+        key
+      )
+        ? aliases[key]
+        : -1;
 
-          type:
-            day?.type ||
-            "rest",
+    if (
+      index >= 0 &&
+      !slots[index]
+    ) {
+      slots[index] = day;
+    } else {
+      leftovers.push(day);
+    }
+  }
 
-          typeLabel:
-            day?.typeLabel ||
-            "",
+  for (const day of leftovers) {
+    const freeIndex =
+      slots.findIndex(
+        item => !item
+      );
 
-          title:
-            day?.title ||
-            "",
+    if (freeIndex === -1) {
+      break;
+    }
 
-          objective:
-            day?.objective ||
-            "",
+    slots[freeIndex] = day;
+  }
+
+  function makeRestDay(dayName) {
+    return {
+      day: dayName,
+      type: "rest",
+      typeLabel: "Descanso",
+      title: "Descanso / recuperación",
+      objective:
+        "Favorecer la recuperación y llegar en buenas condiciones a la siguiente sesión.",
+      durationMin: 0,
+      warmup: "",
+      mainWork:
+        "Descanso. Opcionalmente, paseo suave o movilidad ligera si apetece.",
+      exercises: [],
+      cardio: {
+        distanceKm: 0,
+        durationMin: 0,
+        pace: "",
+        heartRate: "",
+        structure: ""
+      },
+      cooldown: "",
+      coachingNotes: [
+        "Prioriza descanso, hidratación y sueño."
+      ],
+      nutrition: {
+        mode: "none",
+        summary: "",
+        kcalApprox: 0,
+        proteinG: 0,
+        carbsG: 0,
+        fatG: 0,
+        meals: [],
+        timingNotes: []
+      },
+      supplements: []
+    };
+  }
+
+  const days = slots.map(
+    (day, index) => {
+
+      const source =
+        day ||
+        makeRestDay(
+          dayNames[index]
+        );
+
+      return {
+        day: dayNames[index],
+
+        type:
+          source?.type ||
+          "rest",
+
+        typeLabel:
+          source?.typeLabel ||
+          (
+            source?.type === "rest"
+              ? "Descanso"
+              : ""
+          ),
+
+        title:
+          source?.title ||
+          (
+            source?.type === "rest"
+              ? "Descanso / recuperación"
+              : ""
+          ),
+
+        objective:
+          source?.objective ||
+          "",
+
+        durationMin:
+          Math.max(
+            0,
+            Math.round(
+              Number(
+                source?.durationMin ||
+                0
+              )
+            )
+          ),
+
+        warmup:
+          source?.warmup ||
+          "",
+
+        mainWork:
+          source?.mainWork ||
+          "",
+
+        exercises:
+          Array.isArray(
+            source?.exercises
+          )
+            ? source.exercises
+            : [],
+
+        cardio: {
+          distanceKm:
+            Number(
+              source?.cardio?.distanceKm ||
+              0
+            ),
 
           durationMin:
             Math.max(
               0,
               Math.round(
                 Number(
-                  day?.durationMin ||
+                  source?.cardio?.durationMin ||
                   0
                 )
               )
             ),
 
-          warmup:
-            day?.warmup ||
+          pace:
+            source?.cardio?.pace ||
             "",
 
-          mainWork:
-            day?.mainWork ||
+          heartRate:
+            source?.cardio?.heartRate ||
             "",
 
-          exercises:
+          structure:
+            source?.cardio?.structure ||
+            ""
+        },
+
+        cooldown:
+          source?.cooldown ||
+          "",
+
+        coachingNotes:
+          Array.isArray(
+            source?.coachingNotes
+          )
+            ? source.coachingNotes
+            : [],
+
+        nutrition: {
+          mode:
+            source?.nutrition?.mode ||
+            "none",
+
+          summary:
+            source?.nutrition?.summary ||
+            "",
+
+          kcalApprox:
+            Math.max(
+              0,
+              Math.round(
+                Number(
+                  source?.nutrition?.kcalApprox ||
+                  0
+                )
+              )
+            ),
+
+          proteinG:
+            Math.max(
+              0,
+              Math.round(
+                Number(
+                  source?.nutrition?.proteinG ||
+                  0
+                )
+              )
+            ),
+
+          carbsG:
+            Math.max(
+              0,
+              Math.round(
+                Number(
+                  source?.nutrition?.carbsG ||
+                  0
+                )
+              )
+            ),
+
+          fatG:
+            Math.max(
+              0,
+              Math.round(
+                Number(
+                  source?.nutrition?.fatG ||
+                  0
+                )
+              )
+            ),
+
+          meals:
             Array.isArray(
-              day?.exercises
+              source?.nutrition?.meals
             )
-              ? day.exercises
+              ? source.nutrition.meals
               : [],
 
-          cardio: {
-
-            distanceKm:
-              Number(
-                day?.cardio?.distanceKm ||
-                0
-              ),
-
-            durationMin:
-              Math.max(
-                0,
-                Math.round(
-                  Number(
-                    day?.cardio?.durationMin ||
-                    0
-                  )
-                )
-              ),
-
-            pace:
-              day?.cardio?.pace ||
-              "",
-
-            heartRate:
-              day?.cardio?.heartRate ||
-              "",
-
-            structure:
-              day?.cardio?.structure ||
-              ""
-
-          },
-
-          cooldown:
-            day?.cooldown ||
-            "",
-
-          coachingNotes:
+          timingNotes:
             Array.isArray(
-              day?.coachingNotes
+              source?.nutrition?.timingNotes
             )
-              ? day.coachingNotes
-              : [],
-
-          nutrition: {
-
-            mode:
-              day?.nutrition?.mode ||
-              "none",
-
-            summary:
-              day?.nutrition?.summary ||
-              "",
-
-            kcalApprox:
-              Math.max(
-                0,
-                Math.round(
-                  Number(
-                    day?.nutrition?.kcalApprox ||
-                    0
-                  )
-                )
-              ),
-
-            proteinG:
-              Math.max(
-                0,
-                Math.round(
-                  Number(
-                    day?.nutrition?.proteinG ||
-                    0
-                  )
-                )
-              ),
-
-            carbsG:
-              Math.max(
-                0,
-                Math.round(
-                  Number(
-                    day?.nutrition?.carbsG ||
-                    0
-                  )
-                )
-              ),
-
-            fatG:
-              Math.max(
-                0,
-                Math.round(
-                  Number(
-                    day?.nutrition?.fatG ||
-                    0
-                  )
-                )
-              ),
-
-            meals:
-              Array.isArray(
-                day?.nutrition?.meals
-              )
-                ? day.nutrition.meals
-                : [],
-
-            timingNotes:
-              Array.isArray(
-                day?.nutrition?.timingNotes
-              )
-                ? day.nutrition.timingNotes
-                : []
-
-          },
-
-          supplements:
-            Array.isArray(
-              day?.supplements
-            )
-              ? day.supplements
+              ? source.nutrition.timingNotes
               : []
+        },
 
-        })
-      )
+        supplements:
+          Array.isArray(
+            source?.supplements
+          )
+            ? source.supplements
+            : []
+      };
+    }
+  );
 
+  return {
+    week: weekNumber,
+    focus:
+      raw?.focus ||
+      "",
+    loadNote:
+      raw?.loadNote ||
+      "",
+    days
   };
-
 }
 
-
-/* ==========================================================================
-   ENDPOINT
-   ========================================================================== */
 
 module.exports =
   async function handler(
