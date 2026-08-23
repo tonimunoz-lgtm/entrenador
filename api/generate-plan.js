@@ -7,7 +7,7 @@
    La clave nunca llega al navegador.
    ========================================================================== */
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+const MODEL = "gemini-3.6-flash";
 const FIREBASE_WEB_API_KEY = process.env.FIREBASE_WEB_API_KEY || "AIzaSyCIWY-_Sv-Bi5PHYy-IUKX3LrC0VxMcxGg";
 
 function json(res, status, body) {
