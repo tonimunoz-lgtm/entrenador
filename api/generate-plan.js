@@ -184,11 +184,13 @@ async function groq(prompt, maxTokens) {
 
 
   const content =
-    raw?.choices?.[0]?.message?.content ||
-    "";
+  raw?.choices?.[0]?.message?.content ||
+  "";
 
+console.log("GROQ RESPONSE:");
+console.log(content);
 
-  return extractJson(content);
+return extractJson(content);
 
 }
 
