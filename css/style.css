@@ -160,6 +160,51 @@
 [data-theme="ledger"] .exercise-set, [data-theme="ledger"] .distance-num, [data-theme="ledger"] .gauge-value, [data-theme="ledger"] .stat-tile-val{ color: var(--brand); }
 [data-theme="ledger"] .supp-check{ border-radius: 5px; }
 
+/* ---------------- Combustión (inspirado en RunTrack) ---------------- */
+[data-theme="combustion"]{
+  --bg: #F5F6F8;
+  --surface: #FFFFFF;
+  --surface-2: #FFF1E8;
+  --surface-3: #F5F6F8;
+  --border: #DEE1E6;
+  --text: #16181B;
+  --text-muted: #8A8F98;
+  --text-faint: #B7BBC2;
+
+  --brand: #FF5A00;
+  --brand-2: #D94800;
+
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  --font-display: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-body: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Courier New", monospace;
+
+  --overlay-bg: rgba(245,246,248,0.9);
+  --nav-bg: rgba(255,255,255,0.94);
+  --bg-glow: #FFF1E8;
+  --hero-glow: rgba(255,90,0,0.18);
+  --display-transform: none;
+}
+[data-theme="combustion"] body{ background: var(--bg); }
+[data-theme="combustion"] ::selection{ background: var(--brand); color:#fff; }
+[data-theme="combustion"] .hero{
+  background: linear-gradient(135deg, #FF7A2E, var(--brand) 55%, var(--brand-2));
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(255,90,0,0.25);
+}
+[data-theme="combustion"] .hero .hero-eyebrow,
+[data-theme="combustion"] .hero .hero-title,
+[data-theme="combustion"] .hero p{ color: #fff; }
+[data-theme="combustion"] .card{ box-shadow: 0 1px 2px rgba(20,20,20,0.05), 0 6px 18px rgba(20,20,20,0.05); }
+[data-theme="combustion"] .btn-primary{ background: var(--brand); font-weight:800; box-shadow: 0 4px 14px rgba(255,90,0,0.35); }
+[data-theme="combustion"] .btn-primary:active{ background: var(--brand-2); }
+[data-theme="combustion"] .exercise-set, [data-theme="combustion"] .distance-num, [data-theme="combustion"] .gauge-value, [data-theme="combustion"] .stat-tile-val{ color: var(--brand-2); }
+[data-theme="combustion"] .badge{ background: var(--surface-2); color: var(--brand-2); font-weight:700; }
+[data-theme="combustion"] .bottomnav, [data-theme="combustion"] .topbar{ box-shadow: 0 -1px 0 var(--border) inset; }
+
 *{ box-sizing: border-box; }
 html,body{ height:100%; }
 body{
