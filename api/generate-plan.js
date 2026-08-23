@@ -1,4 +1,4 @@
-/* ========================================================================== 
+ /* ========================================================================== 
    FORJA21 — Vercel Serverless Function · Generación de plan con Gemini
 
    Variable de entorno obligatoria en Vercel:
