@@ -401,24 +401,70 @@
     }
   }
 
-  function renderCompleted() {
+  function planPreview(plan) {
+    if (!plan) return "";
+    const phases = Array.isArray(plan.phases) ? plan.phases : [];
+    return `
+      <div class="card po-card po-plan-ready">
+        <div class="hero-eyebrow">Plan generado con IA</div>
+        <h4>${esc(plan.title || "Mi planificación")}</h4>
+        <p class="phase-summary" style="margin-top:6px">${esc(plan.strategySummary || "")}</p>
+        <div class="badge-row" style="margin-top:12px">
+          <span class="badge">${Number(plan.totalWeeks)||0} semanas</span>
+          <span class="badge">${phases.length} fases</span>
+          <span class="badge">Primeras 4 semanas detalladas</span>
+        </div>
+        ${phases.length ? `<div class="po-generated-phases">${phases.map(x=>`<div><b>${esc(x.name)}</b><small>Semanas ${x.weekFrom}–${x.weekTo}</small><p>${esc(x.summary)}</p></div>`).join("")}</div>` : ""}
+        <p class="po-help" style="margin-top:12px">El plan maestro y el primer bloque ya están guardados en tu cuenta. En el siguiente paso de la app mostraremos estas sesiones dentro de Hoy, Calendario y Fases como ocurre con los planes legacy.</p>
+      </div>`;
+  }
+
+  async function renderCompleted() {
     document.querySelector("#bottomnav").style.display="none";
     document.querySelector("#routeBar").innerHTML="";
     const stats=document.querySelector("#statStrip"); if(stats) stats.innerHTML="";
     document.querySelector("#topbarSub").textContent="Perfil listo";
+
+    let existingPlan=null;
+    try { existingPlan = await AIPlanService.load(ctx.user); } catch(e) { console.warn(e); }
+
     document.querySelector("#view").innerHTML=`
       <div class="hero">
         <div class="hero-eyebrow">Perfil personalizado guardado</div>
-        <div class="hero-title">Ya tengo lo necesario para construir tu plan</div>
+        <div class="hero-title">${existingPlan ? "Tu plan ya está creado" : "Ya puedo construir tu planificación"}</div>
         <p class="hero-desc">Tus objetivos, disponibilidad, experiencia, nutrición y suplementación están guardados en tu cuenta.</p>
         <div class="badge-row"><span class="badge">✓ Cuestionario completo</span><span class="badge">☁️ Guardado</span></div>
       </div>
+      ${planPreview(existingPlan)}
+      ${!existingPlan ? `<div class="card po-card" id="poGenerateCard">
+        <h4>Crear mi planificación</h4>
+        <p class="phase-summary" style="margin-top:6px">Gemini creará el plan maestro completo y las primeras cuatro semanas día por día, respetando todo lo que has indicado.</p>
+        <button class="btn btn-primary" id="generatePersonalizedPlan" style="margin-top:14px;width:100%">✨ Generar mi plan</button>
+        <p class="po-help po-center" style="margin-top:10px">Puede tardar un poco porque genera sesiones muy detalladas. No cierres esta pantalla mientras se crea.</p>
+      </div>` : ""}
       <div class="card po-card">
-        <h4>Siguiente paso</h4>
-        <p class="phase-summary" style="margin-top:6px">Aquí conectaremos la IA para convertir este perfil en una planificación completa con fases, semanas, sesiones, ejercicios, nutrición y suplementación según lo que hayas elegido.</p>
-        <button class="btn" id="editPersonalizedProfile" style="margin-top:14px">Revisar mis respuestas</button>
+        <button class="btn" id="editPersonalizedProfile">Revisar mis respuestas</button>
       </div>`;
+
     document.querySelector("#editPersonalizedProfile")?.addEventListener("click",()=>{ ctx.step=0; ctx.data.status="draft"; renderStep(); });
+    document.querySelector("#generatePersonalizedPlan")?.addEventListener("click", async ()=>{
+      const btn=document.querySelector("#generatePersonalizedPlan");
+      const card=document.querySelector("#poGenerateCard");
+      btn.disabled=true;
+      btn.textContent="Creando tu planificación…";
+      card?.classList.add("po-generating");
+      try {
+        const plan=await AIPlanService.generate(ctx.user,ctx.data);
+        if(typeof showToast==="function") showToast("Plan creado y guardado");
+        await renderCompleted();
+      } catch(e) {
+        console.error(e);
+        btn.disabled=false;
+        btn.textContent="✨ Volver a intentar";
+        card?.classList.remove("po-generating");
+        if(typeof showToast==="function") showToast(e.message || "No se pudo generar el plan");
+      }
+    });
   }
 
   function renderStep() {
