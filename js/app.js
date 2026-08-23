@@ -39,6 +39,10 @@ function cloudPush(fn) {
   try { Promise.resolve(fn()).catch(() => {}); } catch (e) {}
 }
 
+function isPersonalizedMode() {
+  return typeof PLAN_MODE !== "undefined" && PLAN_MODE === "personalized";
+}
+
 /* ---------------- Temas de diseño ---------------- */
 const THEMES = [
   { id: "classic", name: "Clásico", desc: "El diseño actual de Forja21.", swatch: ["#3E7BFA", "#63E6D4", "#171D22"] },
@@ -756,6 +760,25 @@ function renderStatStrip() {
   const dk = dateKey(date);
   const checks = getSuppChecks(dk);
 
+  if (isPersonalizedMode()) {
+    const trainKeys = trainingDayKeysForWeek(week);
+    const doneThisWeek = weekDates(week).filter(d =>
+      trainKeys.includes(d.key) &&
+      startOfDay(d.date) <= startOfDay(date) &&
+      workoutsForDate(dateKey(d.date)).length > 0
+    ).length;
+    const target = getWeightTargetForWeek(week);
+
+    el.innerHTML = `
+      <div class="stat-chip"><b>S${week}/${TOTAL_PLAN_WEEKS}</b><span>semana</span></div>
+      <div class="stat-chip"><b>${trainKeys.length ? `${doneThisWeek}/${trainKeys.length}` : "—"}</b><span>entrenos semana</span></div>
+      <div class="stat-chip"><b>${day?.typeLabel || "Plan"}</b><span>hoy</span></div>
+      ${target
+        ? `<div class="stat-chip"><b>${target.weight} kg</b><span>objetivo semana</span></div>`
+        : `<div class="stat-chip"><b>${checks.length}/${day?.supplements?.length || 0}</b><span>suplementos</span></div>`}`;
+    return;
+  }
+
   if (PLAN_MODE === "v2") {
     const trainKeys = trainingDayKeysForWeek(week);
     const doneThisWeek = weekDates(week).filter(d => trainKeys.includes(d.key) && startOfDay(d.date) <= startOfDay(date) && workoutsForDate(dateKey(d.date)).length > 0).length;
@@ -868,9 +891,14 @@ function renderHoy() {
       </div>`;
   }
 
+  const personalizedTarget = isPersonalizedMode() ? getWeightTargetForWeek(week) : null;
   const weightTile = PLAN_MODE === "v2"
     ? `<div class="stat-tile"><div class="stat-tile-val">${week}/${TOTAL_PLAN_WEEKS}</div><div class="stat-tile-label">Semana del plan</div></div>`
-    : `<div class="stat-tile"><div class="stat-tile-val">${pct.toFixed(0)}%</div><div class="stat-tile-label">Progreso de peso</div></div>`;
+    : isPersonalizedMode()
+      ? personalizedTarget
+        ? `<div class="stat-tile"><div class="stat-tile-val">${personalizedTarget.weight} kg</div><div class="stat-tile-label">Objetivo semanal</div></div>`
+        : `<div class="stat-tile"><div class="stat-tile-val">${week}/${TOTAL_PLAN_WEEKS}</div><div class="stat-tile-label">Semana del plan</div></div>`
+      : `<div class="stat-tile"><div class="stat-tile-val">${pct.toFixed(0)}%</div><div class="stat-tile-label">Progreso de peso</div></div>`;
 
   let html = `
     <div class="hero">
@@ -1184,6 +1212,82 @@ function renderFases() {
 
 function renderPeso() {
   const { week } = todayInfo();
+
+  if (isPersonalizedMode()) {
+    const stats = computeStats();
+    const target = week >= 1 ? getWeightTargetForWeek(week) : null;
+    const log = week >= 1 ? getWeightLog(week) : null;
+    const targetWeeks = getAllWeightTargetWeeks();
+    const hasWeightGoal = targetWeeks.length > 0;
+
+    let html = `
+      <div class="section-title">Progreso</div>
+      <div class="card">
+        ${statBarHTML(
+          "Entrenos completados",
+          stats.trainingPct,
+          `${stats.completedCount} de ${stats.scheduledCount} sesiones programadas hasta hoy`,
+          "var(--z4)"
+        )}
+        ${statBarHTML(
+          "Suplementación",
+          stats.suppPct,
+          "Cumplimiento de los suplementos incluidos en tu planificación",
+          "var(--brand-2)"
+        )}
+      </div>`;
+
+    if (hasWeightGoal) {
+      html += `
+        <div class="card">
+          <div class="card-row">
+            <div>
+              <h4>Seguimiento de peso</h4>
+              <p class="phase-summary" style="margin-top:4px">Registra tu peso una vez por semana. La referencia se adapta a tu planificación.</p>
+            </div>
+            ${target ? `<span class="badge">🎯 ${target.weight} kg · S${week}</span>` : ""}
+          </div>
+          ${week >= 1 ? `
+          <div class="weight-input-row" style="margin-top:12px">
+            <input type="number" step="0.1" inputmode="decimal" class="weight-input" id="personalizedWeightInput" placeholder="Peso (kg)" value="${log ? log.weight : ""}" />
+            <button class="btn btn-primary btn-sm" id="personalizedWeightSave">Guardar</button>
+          </div>` : ""}
+        </div>
+
+        <div class="card weight-history">
+          <h4 style="margin-bottom:8px">Histórico</h4>
+          ${state.weights.length
+            ? state.weights.slice().sort((a,b)=>b.week-a.week).map(w => {
+                const t = getWeightTargetForWeek(w.week);
+                return `<div class="weight-history-row">
+                  <span>Semana ${w.week}</span>
+                  <b>${Number(w.weight).toFixed(1)} kg</b>
+                  <small>${t ? `objetivo ${t.weight} kg` : ""}</small>
+                </div>`;
+              }).join("")
+            : `<div class="empty">Aún no has registrado ningún peso.</div>`}
+        </div>`;
+    } else {
+      html += `
+        <div class="card">
+          <p class="phase-summary">Tu objetivo no necesita una meta de báscula semanal. Aquí iremos mostrando constancia, sesiones completadas y evolución del plan.</p>
+        </div>`;
+    }
+
+    $("#view").innerHTML = html;
+
+    $("#personalizedWeightSave")?.addEventListener("click", () => {
+      const v = parseFloat($("#personalizedWeightInput").value);
+      if (!v || v < 30 || v > 250) {
+        showToast("Introduce un peso válido");
+        return;
+      }
+      saveWeight(week, v);
+      showToast("Peso guardado");
+      render();
+    });
+    return;
+  }
 
   if (PLAN_MODE === "v2") {
     const stats = computeStats();
@@ -1665,23 +1769,79 @@ if ("serviceWorker" in navigator) {
 }
 
 /* ---------------- Nuevo sistema personalizado ---------------- */
-function renderPersonalizedSetupStart(user) {
-  if (typeof PersonalizedOnboarding !== "undefined") {
-    PersonalizedOnboarding.start(user);
-    return;
-  }
+async function renderPersonalizedSetupStart(user) {
+  try {
+    const [plan, onboarding, cloud] = await Promise.all([
+      typeof AIPlanService !== "undefined"
+        ? AIPlanService.load(user)
+        : CloudSync.pullPersonalizedPlan(user.uid),
+      CloudSync.pullPersonalizedOnboarding(user.uid),
+      CloudSync.pullAll(user.uid)
+    ]);
 
-  // Fallback de seguridad por si una caché antigua todavía no tiene el fichero.
-  $("#bottomnav").style.display = "none";
-  $("#routeBar").innerHTML = "";
-  const statStrip = $("#statStrip");
-  if (statStrip) statStrip.innerHTML = "";
-  $("#topbarSub").textContent = "Plan personalizado";
-  $("#view").innerHTML = `
-    <div class="card">
-      <h4>Actualizando Forja21…</h4>
-      <p class="phase-summary" style="margin-top:6px">Recarga la aplicación para cargar el nuevo cuestionario personalizado.</p>
-    </div>`;
+    if (
+      plan?.generation?.status === "ready" &&
+      typeof PersonalizedPlanRuntime !== "undefined" &&
+      PersonalizedPlanRuntime.activate(plan, onboarding)
+    ) {
+      // Nunca reutilizar progreso local de otra cuenta.
+      state.weights = Array.isArray(cloud?.weights) ? cloud.weights : [];
+      state.workouts = Array.isArray(cloud?.workouts) ? cloud.workouts : [];
+      state.supps = cloud?.supps || {};
+
+      const startCandidate = plan.startDate
+        ? parseDate(plan.startDate)
+        : new Date();
+
+      const normalizedStart = mondayOfWeek(startCandidate);
+
+      state.settings = {
+        ...state.settings,
+        ...(cloud?.settings || {}),
+        name: plan.athleteName || onboarding?.profile?.name || state.settings.name || "Atleta",
+        startDate: dateKey(normalizedStart),
+        startWeight: Number(onboarding?.profile?.weightKg) || Number(state.settings.startWeight) || 0,
+        onboarded: true
+      };
+
+      storeSet(STORE_KEYS.settings, state.settings);
+      storeSet(STORE_KEYS.weights, state.weights);
+      storeSet(STORE_KEYS.workouts, state.workouts);
+      storeSet(STORE_KEYS.supps, state.supps);
+
+      $("#bottomnav").style.display = "";
+      state.activeTab = "hoy";
+      render();
+      maybeSendDailyReminder();
+      return;
+    }
+
+    if (typeof PersonalizedOnboarding !== "undefined") {
+      PersonalizedOnboarding.start(user);
+      return;
+    }
+
+    $("#bottomnav").style.display = "none";
+    $("#routeBar").innerHTML = "";
+    const statStrip = $("#statStrip");
+    if (statStrip) statStrip.innerHTML = "";
+    $("#topbarSub").textContent = "Plan personalizado";
+    $("#view").innerHTML = `
+      <div class="card">
+        <h4>Actualizando Forja21…</h4>
+        <p class="phase-summary" style="margin-top:6px">Recarga la aplicación para cargar tu planificación personalizada.</p>
+      </div>`;
+
+  } catch (err) {
+    console.error("Forja21 · error cargando plan personalizado", err);
+
+    if (typeof PersonalizedOnboarding !== "undefined") {
+      PersonalizedOnboarding.start(user);
+      return;
+    }
+
+    showToast("No se pudo cargar tu plan personalizado");
+  }
 }
 
 /* ---------------- Init ---------------- */
