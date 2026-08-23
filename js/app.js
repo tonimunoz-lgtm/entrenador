@@ -1592,7 +1592,8 @@ function renderAjustes() {
   });
   $("#signOutBtn")?.addEventListener("click", async () => {
     await CloudSync.signOutUser();
-    if (typeof applyPlanForEmail === "function") applyPlanForEmail(null);
+    if (typeof ForjaPlanRouter !== "undefined") ForjaPlanRouter.applyPlanRoute(null);
+    else if (typeof applyPlanForEmail === "function") applyPlanForEmail(null);
     showToast("Sesión cerrada — tus datos siguen en este dispositivo");
     render();
   });
@@ -1663,10 +1664,47 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+/* ---------------- Nuevo sistema personalizado ---------------- */
+function renderPersonalizedSetupStart(user) {
+  $("#bottomnav").style.display = "none";
+  $("#routeBar").innerHTML = "";
+  const statStrip = $("#statStrip");
+  if (statStrip) statStrip.innerHTML = "";
+  $("#topbarSub").textContent = "Plan personalizado";
+
+  const email = user?.email || "tu cuenta";
+  $("#view").innerHTML = `
+    <div class="hero">
+      <div class="hero-eyebrow">FORJA21 · NUEVO PERFIL</div>
+      <div class="hero-title">Vamos a construir tu plan</div>
+      <p class="hero-desc">Esta cuenta no utilizará el plan de Toni ni el de Beizga. Tendrá una planificación propia según tus objetivos, disponibilidad, experiencia, nutrición y suplementación.</p>
+      <div class="badge-row">
+        <span class="badge">👤 ${email}</span>
+        <span class="badge">✨ Plan individual</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h4>Configuración personalizada preparada</h4>
+      <p class="phase-summary" style="margin-top:6px">El siguiente paso será el cuestionario inteligente. Por ahora esta pantalla confirma que los usuarios nuevos ya están separados de los dos planes existentes.</p>
+    </div>`;
+}
+
 /* ---------------- Init ---------------- */
 function boot() {
   applyTheme(state.settings.theme || "classic");
   if (isStandalone()) $("#installBtn").hidden = true;
+
+  const personalizedUser = typeof ForjaPlanRouter !== "undefined"
+    && ForjaPlanRouter.route === "personalized"
+    && typeof CloudSync !== "undefined"
+    && CloudSync.user;
+
+  if (personalizedUser) {
+    renderPersonalizedSetupStart(CloudSync.user);
+    return;
+  }
+
   if (!state.settings.onboarded) {
     renderOnboarding();
   } else {
@@ -1686,7 +1724,18 @@ async function handleCloudAuthChange(user) {
   if (!user || cloudSyncInProgress) return;
   cloudSyncInProgress = true;
   try {
-    if (typeof applyPlanForEmail === "function") applyPlanForEmail(user.email);
+    const route = typeof ForjaPlanRouter !== "undefined"
+      ? ForjaPlanRouter.applyPlanRoute(user)
+      : "legacy-toni";
+
+    // Los usuarios nuevos NO heredan ni suben datos locales de Toni/Beizga.
+    // Entrarán por su propio onboarding y su propio documento de plan.
+    if (route === "personalized") {
+      boot();
+      return;
+    }
+
+    // A partir de aquí el flujo legacy se conserva exactamente como estaba.
     const cloud = await CloudSync.pullAll(user.uid);
     const cloudHasData = cloud.settings || cloud.weights.length || cloud.workouts.length || Object.keys(cloud.supps).length;
 
