@@ -1,4 +1,4 @@
-const CACHE_NAME = "forja21-v21";
+const CACHE_NAME = "forja21-v22";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   "./js/firebase-sync.js",
   "./js/ai-plan-service.js",
   "./js/onboarding-personalized.js",
+  "./js/personalized-plan-adapter.js",
   "./js/app.js",
   "./manifest.json",
   "./icons/icon-192.png",
