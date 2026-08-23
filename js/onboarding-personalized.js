@@ -404,18 +404,22 @@
   function planPreview(plan) {
     if (!plan) return "";
     const phases = Array.isArray(plan.phases) ? plan.phases : [];
+    const complete = plan.generation?.status === "ready";
+    const doneWeeks = Number(plan.generation?.completedWeeks || plan.firstBlock?.weeks?.length || 0);
+    const totalBlock = Number(plan.generation?.totalWeeksInFirstBlock || Math.min(4, Number(plan.totalWeeks)||4));
+
     return `
       <div class="card po-card po-plan-ready">
-        <div class="hero-eyebrow">Plan generado con IA</div>
+        <div class="hero-eyebrow">${complete ? "Plan generado con IA" : "Generación en curso"}</div>
         <h4>${esc(plan.title || "Mi planificación")}</h4>
         <p class="phase-summary" style="margin-top:6px">${esc(plan.strategySummary || "")}</p>
         <div class="badge-row" style="margin-top:12px">
           <span class="badge">${Number(plan.totalWeeks)||0} semanas</span>
           <span class="badge">${phases.length} fases</span>
-          <span class="badge">Primeras 4 semanas detalladas</span>
+          <span class="badge">${complete ? `✓ ${totalBlock} semanas detalladas` : `${doneWeeks}/${totalBlock} semanas detalladas`}</span>
         </div>
         ${phases.length ? `<div class="po-generated-phases">${phases.map(x=>`<div><b>${esc(x.name)}</b><small>Semanas ${x.weekFrom}–${x.weekTo}</small><p>${esc(x.summary)}</p></div>`).join("")}</div>` : ""}
-        <p class="po-help" style="margin-top:12px">El plan maestro y el primer bloque ya están guardados en tu cuenta. En el siguiente paso de la app mostraremos estas sesiones dentro de Hoy, Calendario y Fases como ocurre con los planes legacy.</p>
+        <p class="po-help" style="margin-top:12px">${complete ? "El plan maestro y el primer bloque ya están guardados en tu cuenta." : "Lo que ya se ha generado está guardado. Puedes continuar sin perder el progreso."}</p>
       </div>`;
   }
 
@@ -428,40 +432,93 @@
     let existingPlan=null;
     try { existingPlan = await AIPlanService.load(ctx.user); } catch(e) { console.warn(e); }
 
+    const planReady = existingPlan?.generation?.status === "ready";
+    const partialPlan = existingPlan && !planReady;
+    const completedWeeks = Number(existingPlan?.generation?.completedWeeks || existingPlan?.firstBlock?.weeks?.length || 0);
+
     document.querySelector("#view").innerHTML=`
       <div class="hero">
         <div class="hero-eyebrow">Perfil personalizado guardado</div>
-        <div class="hero-title">${existingPlan ? "Tu plan ya está creado" : "Ya puedo construir tu planificación"}</div>
+        <div class="hero-title">${planReady ? "Tu plan ya está creado" : "Ya puedo construir tu planificación"}</div>
         <p class="hero-desc">Tus objetivos, disponibilidad, experiencia, nutrición y suplementación están guardados en tu cuenta.</p>
         <div class="badge-row"><span class="badge">✓ Cuestionario completo</span><span class="badge">☁️ Guardado</span></div>
       </div>
+
       ${planPreview(existingPlan)}
-      ${!existingPlan ? `<div class="card po-card" id="poGenerateCard">
-        <h4>Crear mi planificación</h4>
-        <p class="phase-summary" style="margin-top:6px">Gemini creará el plan maestro completo y las primeras cuatro semanas día por día, respetando todo lo que has indicado.</p>
-        <button class="btn btn-primary" id="generatePersonalizedPlan" style="margin-top:14px;width:100%">✨ Generar mi plan</button>
-        <p class="po-help po-center" style="margin-top:10px">Puede tardar un poco porque genera sesiones muy detalladas. No cierres esta pantalla mientras se crea.</p>
+
+      ${!planReady ? `<div class="card po-card" id="poGenerateCard">
+        <h4>${partialPlan ? "Continuar mi planificación" : "Crear mi planificación"}</h4>
+        <p class="phase-summary" style="margin-top:6px">La IA construirá primero el plan maestro y después las primeras cuatro semanas una a una. Cada etapa se guarda automáticamente.</p>
+
+        <div id="poGenerationProgress" style="display:${partialPlan ? "block" : "none"};margin-top:14px;padding:14px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:rgba(255,255,255,.03)">
+          <div style="font-weight:800;margin-bottom:6px" id="poGenerationStatus">${partialPlan ? `Progreso guardado: ${completedWeeks}/4 semanas` : "Preparando…"}</div>
+          <div style="height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden">
+            <div id="poGenerationBar" style="height:100%;width:${Math.min(100,(completedWeeks/5)*100)}%;background:currentColor;transition:width .3s ease"></div>
+          </div>
+          <div class="po-help" id="poGenerationDetail" style="margin-top:8px">${partialPlan ? "Continuaremos desde donde se quedó." : ""}</div>
+        </div>
+
+        <button class="btn btn-primary" id="generatePersonalizedPlan" style="margin-top:14px;width:100%">${partialPlan ? "✨ Continuar generación" : "✨ Generar mi plan"}</button>
+        <p class="po-help po-center" style="margin-top:10px">Con el nivel gratuito de Groq puede haber pequeñas esperas entre etapas. La app continuará automáticamente y no repetirá lo ya guardado.</p>
       </div>` : ""}
+
       <div class="card po-card">
         <button class="btn" id="editPersonalizedProfile">Revisar mis respuestas</button>
       </div>`;
 
     document.querySelector("#editPersonalizedProfile")?.addEventListener("click",()=>{ ctx.step=0; ctx.data.status="draft"; renderStep(); });
+
     document.querySelector("#generatePersonalizedPlan")?.addEventListener("click", async ()=>{
       const btn=document.querySelector("#generatePersonalizedPlan");
       const card=document.querySelector("#poGenerateCard");
+      const progress=document.querySelector("#poGenerationProgress");
+      const status=document.querySelector("#poGenerationStatus");
+      const detail=document.querySelector("#poGenerationDetail");
+      const bar=document.querySelector("#poGenerationBar");
+
       btn.disabled=true;
-      btn.textContent="Creando tu planificación…";
+      btn.textContent="Construyendo tu planificación…";
       card?.classList.add("po-generating");
+      if(progress) progress.style.display="block";
+
+      const updateProgress=(info)=>{
+        if(!info) return;
+        if(status) status.textContent=info.message || "Generando…";
+
+        let pct=8;
+        if(info.type==="masterDone") pct=20;
+        if(info.type==="week") pct=20 + ((Number(info.week)-1)/4)*80;
+        if(info.type==="weekDone") pct=20 + (Number(info.week)/4)*80;
+        if(info.type==="done") pct=100;
+        if(info.type==="resume") pct=20 + (Number(info.completedWeeks||0)/4)*80;
+
+        if(bar) bar.style.width=`${Math.max(4,Math.min(100,pct))}%`;
+
+        if(detail){
+          if(info.type==="waiting"){
+            detail.textContent="No es un error: estamos respetando la cuota gratuita de Groq. La generación seguirá sola.";
+          }else if(info.type==="weekDone"){
+            detail.textContent=`La semana ${info.week} ya está guardada en Firestore.`;
+          }else if(info.type==="masterDone"){
+            detail.textContent="La estructura completa del plan ya está guardada.";
+          }else if(info.type==="resume"){
+            detail.textContent="He encontrado progreso anterior y no voy a repetirlo.";
+          }else{
+            detail.textContent="Cada etapa se guarda automáticamente.";
+          }
+        }
+      };
+
       try {
-        const plan=await AIPlanService.generate(ctx.user,ctx.data);
+        const plan=await AIPlanService.generate(ctx.user,ctx.data,updateProgress);
         if(typeof showToast==="function") showToast("Plan creado y guardado");
         await renderCompleted();
       } catch(e) {
         console.error(e);
         btn.disabled=false;
-        btn.textContent="✨ Volver a intentar";
+        btn.textContent="✨ Continuar / volver a intentar";
         card?.classList.remove("po-generating");
+        if(detail) detail.textContent="El progreso completado sigue guardado. Puedes continuar cuando quieras.";
         if(typeof showToast==="function") showToast(e.message || "No se pudo generar el plan");
       }
     });
