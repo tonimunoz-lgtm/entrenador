@@ -612,3 +612,55 @@ p{ margin:0; }
   .view{ padding-left:22px; padding-right:22px; }
   .log-grid{ grid-template-columns: 1fr 1fr 1fr; }
 }
+
+/* ========================================================================== 
+   Onboarding personalizado — usuarios nuevos
+   ========================================================================== */
+.po-wrap{ padding-bottom:24px; }
+.personalized-head{ margin:4px 0 18px; }
+.personalized-head h2{ margin:5px 0 7px; font-size:25px; line-height:1.15; }
+.personalized-head p{ margin:0; color:var(--text-muted); font-size:13px; line-height:1.55; }
+.po-progress{ height:5px; margin-top:14px; border-radius:999px; background:var(--surface-3); overflow:hidden; }
+.po-progress i{ display:block; height:100%; border-radius:inherit; background:var(--brand); transition:width .2s ease; }
+.po-card{ margin-bottom:12px; }
+.po-card h4{ margin-bottom:12px; }
+.po-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.po-help{ display:block; color:var(--text-faint); font-size:11px; line-height:1.45; margin-top:3px; }
+.po-center{ text-align:center; }
+.po-label{ display:block; color:var(--text-muted); font-size:12.5px; margin-bottom:8px; }
+.po-wrap select,
+.po-wrap textarea{
+  width:100%; box-sizing:border-box; background:var(--surface-3); border:1px solid var(--border); color:var(--text);
+  font-size:14px; border-radius:12px; padding:11px 13px; font-family:var(--font-body); outline:none;
+}
+.po-wrap textarea{ resize:vertical; min-height:84px; line-height:1.45; }
+.po-wrap select:focus,.po-wrap textarea:focus,.po-wrap input:focus{ border-color:var(--brand); }
+.po-choice-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.po-choice{
+  display:flex; align-items:center; gap:11px; min-height:68px; padding:12px; border:1px solid var(--border);
+  background:var(--surface); border-radius:15px; cursor:pointer; transition:.15s ease;
+}
+.po-choice input{ position:absolute; opacity:0; pointer-events:none; }
+.po-choice.selected{ border-color:var(--brand); background:color-mix(in srgb, var(--brand) 10%, var(--surface)); }
+.po-choice-icon{ font-size:23px; flex:none; }
+.po-choice b{ display:block; font-size:13px; }
+.po-choice small{ display:block; color:var(--text-muted); font-size:10.5px; margin-top:3px; line-height:1.25; }
+.po-days{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.po-days label{ cursor:pointer; }
+.po-days input{ position:absolute; opacity:0; }
+.po-days span{ display:flex; height:38px; align-items:center; justify-content:center; border-radius:11px; border:1px solid var(--border); background:var(--surface-3); font-weight:700; font-size:12px; }
+.po-days label.selected span{ border-color:var(--brand); background:color-mix(in srgb, var(--brand) 14%, var(--surface-3)); color:var(--brand-2); }
+.po-inline-checks{ display:flex; flex-wrap:wrap; gap:8px 14px; margin-bottom:14px; color:var(--text-muted); font-size:12.5px; }
+.po-inline-checks label{ cursor:pointer; }
+.po-actions{ display:flex; gap:10px; margin-top:18px; }
+.po-actions .btn{ flex:1; }
+.po-review p{ margin:8px 0 0; color:var(--text-muted); font-size:12.5px; line-height:1.45; }
+.po-consent{ display:flex; align-items:flex-start; gap:10px; padding:13px; margin:12px 0; border:1px solid var(--border); border-radius:13px; background:var(--surface); font-size:12.5px; line-height:1.4; cursor:pointer; }
+.po-consent input{ margin-top:2px; }
+.po-warning{ border-color:color-mix(in srgb, #e3a72f 35%, var(--border)); }
+.po-warning p{ margin:6px 0 0; color:var(--text-muted); font-size:11.5px; line-height:1.5; }
+
+@media (max-width:520px){
+  .po-choice-grid,.po-grid-2{ grid-template-columns:1fr; }
+  .po-choice{ min-height:60px; }
+}
