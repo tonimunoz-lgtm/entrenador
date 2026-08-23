@@ -374,7 +374,7 @@ module.exports = async function handler(req, res) {
             { role: "user", content: buildPrompt(profile, firebaseUser.email) }
           ],
           temperature: 0.25,
-          max_completion_tokens: 6000,
+          max_completion_tokens: 5000,
           response_format: {
             type: "json_schema",
             json_schema: {
