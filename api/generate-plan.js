@@ -1,299 +1,1400 @@
-/* FORJA21 — Groq por etapas, plan maestro dividido */
+/* FORJA21 — Groq por etapas, objetivos semanales en bloques */
+
 const MODEL = "openai/gpt-oss-120b";
+
 const FIREBASE_WEB_API_KEY =
   process.env.FIREBASE_WEB_API_KEY ||
   "AIzaSyCIWY-_Sv-Bi5PHYy-IUKX3LrC0VxMcxGg";
 
-function json(res,status,body){
-  res.status(status).setHeader("Content-Type","application/json; charset=utf-8");
-  res.setHeader("Cache-Control","no-store");
+
+function json(res, status, body) {
+  res
+    .status(status)
+    .setHeader("Content-Type", "application/json; charset=utf-8");
+
+  res.setHeader("Cache-Control", "no-store");
+
   return res.end(JSON.stringify(body));
 }
 
-async function verifyFirebaseToken(idToken){
-  if(!idToken) return null;
-  const r=await fetch(
+
+async function verifyFirebaseToken(idToken) {
+
+  if (!idToken) return null;
+
+  const r = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(FIREBASE_WEB_API_KEY)}`,
-    {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({idToken})}
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        idToken
+      })
+    }
   );
-  if(!r.ok) return null;
-  const data=await r.json();
-  return data.users?.[0]||null;
+
+  if (!r.ok) return null;
+
+  const data = await r.json();
+
+  return data.users?.[0] || null;
 }
 
-function systemPrompt(){
+
+function systemPrompt() {
+
   return `Eres el motor de planificación de FORJA21.
-Devuelve siempre UN único objeto JSON válido, sin Markdown ni texto adicional.
+
+Devuelve siempre UN único objeto JSON válido.
+No utilices Markdown.
+No añadas explicaciones fuera del JSON.
 Respeta estrictamente los datos del usuario.
-No inventes lesiones, marcas ni disponibilidad.
-Prioriza seguridad, recuperación, adherencia y progresión gradual.`;
+No inventes lesiones, marcas, disponibilidad ni material.
+Prioriza progresión gradual, recuperación, seguridad y adherencia.`;
+
 }
 
-function extractJson(text){
-  const clean=String(text||"").trim()
-    .replace(/^```json\s*/i,"").replace(/^```\s*/i,"").replace(/\s*```$/i,"").trim();
-  try{return JSON.parse(clean);}catch(_){}
-  const a=clean.indexOf("{"), b=clean.lastIndexOf("}");
-  if(a>=0 && b>a) return JSON.parse(clean.slice(a,b+1));
-  throw new Error("La IA no devolvió un JSON válido.");
-}
 
-async function groq(prompt,maxTokens){
-  const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "Authorization":`Bearer ${process.env.GROQ_API_KEY}`
-    },
-    body:JSON.stringify({
-      model:MODEL,
-      messages:[
-        {role:"system",content:systemPrompt()},
-        {role:"user",content:prompt}
-      ],
-      temperature:0.15,
-      max_completion_tokens:maxTokens,
-      response_format:{type:"json_object"}
-    })
-  });
+function extractJson(text) {
 
-  let raw=null; try{raw=await r.json();}catch(_){}
-  if(!r.ok){
-    const msg=raw?.error?.message||raw?.message||`Groq devolvió ${r.status}`;
-    const tooLarge=/request too large/i.test(msg);
-    const limited=r.status===429 || /tokens per minute|rate limit|too many requests/i.test(msg);
-    const e=new Error(msg);
-    if(tooLarge) e.code="REQUEST_TOO_LARGE";
-    else if(limited){e.code="RATE_LIMIT"; e.retryAfterSeconds=20;}
-    else e.code=String(r.status);
-    throw e;
+  const clean = String(text || "")
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(clean);
+  } catch (_) {}
+
+  const first = clean.indexOf("{");
+  const last = clean.lastIndexOf("}");
+
+  if (first >= 0 && last > first) {
+    return JSON.parse(
+      clean.slice(first, last + 1)
+    );
   }
-  return extractJson(raw?.choices?.[0]?.message?.content||"");
+
+  throw new Error(
+    "La IA no devolvió un JSON válido."
+  );
 }
 
-function corePrompt(profile,email){
-  return `Genera SOLO la estructura maestra de FORJA21. NO generes weeklyTargets ni semanas detalladas.
 
-USUARIO: ${email||""}
-CUESTIONARIO: ${JSON.stringify(profile)}
+async function groq(prompt, maxTokens) {
 
-Devuelve:
-{
- "schemaVersion":1,
- "title":"string",
- "athleteName":"string",
- "generatedFor":"string",
- "startDate":"YYYY-MM-DD",
- "totalWeeks":12,
- "primaryGoal":"string",
- "secondaryGoals":["string"],
- "strategySummary":"string",
- "safetyNotes":["string"],
- "milestones":[{"week":1,"date":"YYYY-MM-DD","label":"string","target":"string"}],
- "phases":[{
-   "id":1,"name":"string","weekFrom":1,"weekTo":4,
-   "summary":"string","focus":["string"],"progression":"string","nutritionFocus":"string"
- }],
- "firstBlockSummary":"string",
- "firstBlockProgressionRules":["string"]
+  const r = await fetch(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization":
+          `Bearer ${process.env.GROQ_API_KEY}`
+      },
+
+      body: JSON.stringify({
+
+        model: MODEL,
+
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt()
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+
+        temperature: 0.1,
+
+        max_completion_tokens: maxTokens,
+
+        response_format: {
+          type: "json_object"
+        }
+
+      })
+    }
+  );
+
+
+  let raw = null;
+
+  try {
+    raw = await r.json();
+  } catch (_) {}
+
+
+  if (!r.ok) {
+
+    const message =
+      raw?.error?.message ||
+      raw?.message ||
+      `Groq devolvió ${r.status}.`;
+
+    const tooLarge =
+      /request too large/i.test(message);
+
+    const limited =
+      r.status === 429 ||
+      /tokens per minute|rate limit|too many requests/i.test(message);
+
+
+    const e = new Error(message);
+
+
+    if (tooLarge) {
+
+      e.code = "REQUEST_TOO_LARGE";
+
+    } else if (limited) {
+
+      e.code = "RATE_LIMIT";
+
+      const retryHeader =
+        Number(
+          r.headers.get("retry-after")
+        );
+
+      e.retryAfterSeconds =
+        Number.isFinite(retryHeader) &&
+        retryHeader > 0
+          ? Math.ceil(retryHeader)
+          : 20;
+
+    } else {
+
+      e.code =
+        String(r.status);
+
+    }
+
+
+    throw e;
+
+  }
+
+
+  const content =
+    raw?.choices?.[0]?.message?.content ||
+    "";
+
+
+  return extractJson(content);
+
 }
 
-REGLAS:
-- Usa la duración pedida por el usuario.
-- phases cubre de la semana 1 a totalWeeks sin huecos.
-- Respeta prioridad de objetivos, disponibilidad, experiencia, material y limitaciones.
-- Si hay fecha de competición, periodiza hacia ella.
-- Incluye descarga cuando proceda.
-- NO incluyas weeklyTargets.
-- Devuelve solo JSON.`;
-}
 
-function targetsPrompt(profile,core){
-  return `Genera SOLO los objetivos semanales del siguiente plan maestro.
+/* ==========================================================================
+   PLAN MAESTRO
+   ========================================================================== */
 
-PLAN:
-${JSON.stringify({
-  startDate:core.startDate,
-  totalWeeks:core.totalWeeks,
-  primaryGoal:core.primaryGoal,
-  secondaryGoals:core.secondaryGoals,
-  strategySummary:core.strategySummary,
-  phases:core.phases
-})}
+function corePrompt(profile, email) {
+
+  return `Genera SOLO la estructura maestra de FORJA21.
+
+NO generes objetivos semanales.
+NO generes sesiones diarias.
+
+USUARIO:
+${email || ""}
 
 CUESTIONARIO:
 ${JSON.stringify(profile)}
 
-Devuelve exactamente:
+Devuelve:
+
 {
- "weeklyTargets":[
-   {
-    "week":1,
-    "focus":"string",
-    "trainingSessions":4,
-    "runningKmApprox":0,
-    "weightTargetKg":0,
-    "note":"string"
-   }
- ]
+  "schemaVersion": 1,
+  "title": "string",
+  "athleteName": "string",
+  "generatedFor": "string",
+  "startDate": "YYYY-MM-DD",
+  "totalWeeks": 12,
+  "primaryGoal": "string",
+  "secondaryGoals": ["string"],
+  "strategySummary": "string",
+  "safetyNotes": ["string"],
+
+  "milestones": [
+    {
+      "week": 1,
+      "date": "YYYY-MM-DD",
+      "label": "string",
+      "target": "string"
+    }
+  ],
+
+  "phases": [
+    {
+      "id": 1,
+      "name": "string",
+      "weekFrom": 1,
+      "weekTo": 4,
+      "summary": "string",
+      "focus": ["string"],
+      "progression": "string",
+      "nutritionFocus": "string"
+    }
+  ],
+
+  "firstBlockSummary": "string",
+
+  "firstBlockProgressionRules": [
+    "string"
+  ]
 }
+
 
 REGLAS:
-- Debe haber EXACTAMENTE ${Number(core.totalWeeks)||1} elementos.
-- Las semanas deben ir de 1 a ${Number(core.totalWeeks)||1}, sin saltos ni duplicados.
-- trainingSessions respeta disponibilidad.
-- runningKmApprox=0 si correr no forma parte del objetivo.
-- weightTargetKg=0 si no procede fijar un objetivo de peso semanal.
-- Mantén coherencia con phases.
-- Devuelve solo JSON.`;
+
+- Respeta la duración solicitada.
+- phases debe cubrir desde semana 1 hasta totalWeeks.
+- No debe haber huecos entre fases.
+- Respeta objetivo principal y secundarios.
+- Respeta experiencia, disponibilidad, material y limitaciones.
+- Si hay fecha objetivo, periodiza hacia ella.
+- Introduce semanas de descarga cuando corresponda.
+- NO devuelvas weeklyTargets.
+- NO desarrolles días concretos.
+
+Devuelve solamente JSON.`;
+
 }
 
-function compactMaster(master){
+
+function validateCore(core) {
+
+  const total =
+    Number(core?.totalWeeks);
+
+
+  if (
+    !Number.isInteger(total) ||
+    total < 1
+  ) {
+
+    throw new Error(
+      "El plan maestro no contiene una duración válida."
+    );
+
+  }
+
+
+  if (
+    !Array.isArray(core?.phases) ||
+    !core.phases.length
+  ) {
+
+    throw new Error(
+      "El plan maestro no contiene fases."
+    );
+
+  }
+
+
+  return core;
+
+}
+
+
+/* ==========================================================================
+   OBJETIVOS SEMANALES POR BLOQUES
+   ========================================================================== */
+
+function targetsBatchPrompt(
+  profile,
+  core,
+  weekFrom,
+  weekTo,
+  previousTargets
+) {
+
+  const phaseSummary =
+    Array.isArray(core.phases)
+      ? core.phases.map(p => ({
+          name: p.name,
+          weekFrom: p.weekFrom,
+          weekTo: p.weekTo,
+          focus: p.focus,
+          progression: p.progression
+        }))
+      : [];
+
+
+  return `Genera SOLO los objetivos semanales de FORJA21
+desde la semana ${weekFrom} hasta la semana ${weekTo}.
+
+PLAN MAESTRO:
+
+${JSON.stringify({
+  startDate: core.startDate,
+  totalWeeks: core.totalWeeks,
+  primaryGoal: core.primaryGoal,
+  secondaryGoals: core.secondaryGoals,
+  strategySummary: core.strategySummary,
+  phases: phaseSummary
+})}
+
+
+OBJETIVOS SEMANALES YA GENERADOS:
+
+${JSON.stringify(previousTargets || [])}
+
+
+CUESTIONARIO:
+
+${JSON.stringify(profile)}
+
+
+Devuelve EXACTAMENTE:
+
+{
+  "weeklyTargets": [
+    {
+      "week": ${weekFrom},
+      "focus": "string",
+      "trainingSessions": 4,
+      "runningKmApprox": 0,
+      "weightTargetKg": 0,
+      "note": "string"
+    }
+  ]
+}
+
+
+REGLAS OBLIGATORIAS:
+
+- Devuelve EXACTAMENTE ${weekTo - weekFrom + 1} elementos.
+- Deben corresponder exclusivamente a las semanas ${weekFrom} a ${weekTo}.
+- No incluyas semanas anteriores.
+- No incluyas semanas posteriores.
+- "week" debe coincidir exactamente con la semana correspondiente.
+- Mantén continuidad con los objetivos semanales ya generados.
+- Respeta las fases del plan maestro.
+- trainingSessions debe respetar la disponibilidad del usuario.
+- runningKmApprox=0 si correr no forma parte del plan.
+- weightTargetKg=0 si no procede marcar peso semanal.
+- La progresión debe ser gradual.
+- Si existe descarga dentro de estas semanas, debe reflejarse.
+- Evita repetir exactamente el mismo texto en todas las semanas.
+
+Devuelve solamente JSON.`;
+
+}
+
+
+function validateTargetsBatch(
+  data,
+  weekFrom,
+  weekTo
+) {
+
+  if (
+    !Array.isArray(
+      data?.weeklyTargets
+    )
+  ) {
+
+    throw new Error(
+      "La IA no devolvió objetivos semanales."
+    );
+
+  }
+
+
+  const expected =
+    weekTo -
+    weekFrom +
+    1;
+
+
+  if (
+    data.weeklyTargets.length !==
+    expected
+  ) {
+
+    throw new Error(
+      `Se esperaban ${expected} objetivos semanales ` +
+      `para las semanas ${weekFrom}-${weekTo} y se recibieron ` +
+      `${data.weeklyTargets.length}.`
+    );
+
+  }
+
+
+  return data.weeklyTargets.map(
+    (target, index) => {
+
+      const week =
+        weekFrom +
+        index;
+
+
+      return {
+
+        week,
+
+        focus:
+          target?.focus ||
+          "",
+
+        trainingSessions:
+          Math.max(
+            0,
+            Math.round(
+              Number(
+                target?.trainingSessions ||
+                0
+              )
+            )
+          ),
+
+        runningKmApprox:
+          Number(
+            target?.runningKmApprox ||
+            0
+          ),
+
+        weightTargetKg:
+          Number(
+            target?.weightTargetKg ||
+            0
+          ),
+
+        note:
+          target?.note ||
+          ""
+
+      };
+
+    }
+  );
+
+}
+
+
+/* ==========================================================================
+   SEMANA DETALLADA
+   ========================================================================== */
+
+function compactMaster(master) {
+
   return {
-    title:master.title,startDate:master.startDate,totalWeeks:master.totalWeeks,
-    primaryGoal:master.primaryGoal,secondaryGoals:master.secondaryGoals,
-    strategySummary:master.strategySummary,phases:master.phases,
-    weeklyTargets:master.weeklyTargets,
-    firstBlockSummary:master.firstBlockSummary,
-    firstBlockProgressionRules:master.firstBlockProgressionRules
+
+    title:
+      master.title,
+
+    startDate:
+      master.startDate,
+
+    totalWeeks:
+      master.totalWeeks,
+
+    primaryGoal:
+      master.primaryGoal,
+
+    secondaryGoals:
+      master.secondaryGoals,
+
+    strategySummary:
+      master.strategySummary,
+
+    phases:
+      master.phases,
+
+    weeklyTargets:
+      master.weeklyTargets,
+
+    firstBlockSummary:
+      master.firstBlockSummary,
+
+    firstBlockProgressionRules:
+      master.firstBlockProgressionRules
+
   };
+
 }
 
-function weekPrompt(profile,master,n,prev,email){
-  const target=master.weeklyTargets?.find(x=>Number(x.week)===n)||{};
-  return `Genera SOLO la semana ${n} de FORJA21.
 
-USUARIO:${email||""}
-PLAN:${JSON.stringify(compactMaster(master))}
-OBJETIVO SEMANAL:${JSON.stringify(target)}
-SEMANA ANTERIOR:${prev||"No existe"}
-CUESTIONARIO:${JSON.stringify(profile)}
+function weekPrompt(
+  profile,
+  master,
+  weekNumber,
+  previousWeekSummary,
+  email
+) {
+
+  const target =
+    master.weeklyTargets?.find(
+      target =>
+        Number(target.week) ===
+        Number(weekNumber)
+    ) || {};
+
+
+  return `Genera SOLO la semana ${weekNumber} del plan FORJA21.
+
+
+USUARIO:
+
+${email || ""}
+
+
+PLAN MAESTRO:
+
+${JSON.stringify(
+  compactMaster(master)
+)}
+
+
+OBJETIVO DE ESTA SEMANA:
+
+${JSON.stringify(target)}
+
+
+RESUMEN DE LA SEMANA ANTERIOR:
+
+${previousWeekSummary || "No existe: esta es la primera semana."}
+
+
+CUESTIONARIO:
+
+${JSON.stringify(profile)}
+
 
 Devuelve:
+
 {
- "week":${n},
- "focus":"string",
- "loadNote":"string",
- "days":[
-  {
-   "day":"Lunes",
-   "type":"strength|running|mobility|rest|cross_training|other",
-   "typeLabel":"string",
-   "title":"string",
-   "objective":"string",
-   "durationMin":60,
-   "warmup":"string",
-   "mainWork":"string",
-   "exercises":[{"name":"string","sets":"string","reps":"string","rest":"string","intensity":"string","notes":"string"}],
-   "cardio":{"distanceKm":0,"durationMin":0,"pace":"string","heartRate":"string","structure":"string"},
-   "cooldown":"string",
-   "coachingNotes":["string"],
-   "nutrition":{"mode":"string","summary":"string","kcalApprox":0,"proteinG":0,"carbsG":0,"fatG":0,
-      "meals":[{"meal":"string","text":"string","kcalApprox":0}],"timingNotes":["string"]},
-   "supplements":[{"name":"string","amount":"string","timing":"string","reason":"string","optional":true}]
-  }
- ]
+  "week": ${weekNumber},
+  "focus": "string",
+  "loadNote": "string",
+
+  "days": [
+
+    {
+      "day": "Lunes",
+
+      "type":
+        "strength|running|mobility|rest|cross_training|other",
+
+      "typeLabel":
+        "string",
+
+      "title":
+        "string",
+
+      "objective":
+        "string",
+
+      "durationMin":
+        60,
+
+      "warmup":
+        "string",
+
+      "mainWork":
+        "string",
+
+      "exercises": [
+        {
+          "name":
+            "string",
+
+          "sets":
+            "string",
+
+          "reps":
+            "string",
+
+          "rest":
+            "string",
+
+          "intensity":
+            "string",
+
+          "notes":
+            "string"
+        }
+      ],
+
+      "cardio": {
+
+        "distanceKm":
+          0,
+
+        "durationMin":
+          0,
+
+        "pace":
+          "string",
+
+        "heartRate":
+          "string",
+
+        "structure":
+          "string"
+
+      },
+
+      "cooldown":
+        "string",
+
+      "coachingNotes": [
+        "string"
+      ],
+
+      "nutrition": {
+
+        "mode":
+          "string",
+
+        "summary":
+          "string",
+
+        "kcalApprox":
+          0,
+
+        "proteinG":
+          0,
+
+        "carbsG":
+          0,
+
+        "fatG":
+          0,
+
+        "meals": [
+          {
+            "meal":
+              "string",
+
+            "text":
+              "string",
+
+            "kcalApprox":
+              0
+          }
+        ],
+
+        "timingNotes": [
+          "string"
+        ]
+
+      },
+
+      "supplements": [
+        {
+          "name":
+            "string",
+
+          "amount":
+            "string",
+
+          "timing":
+            "string",
+
+          "reason":
+            "string",
+
+          "optional":
+            true
+        }
+      ]
+
+    }
+
+  ]
+
 }
+
 
 REGLAS:
-- EXACTAMENTE 7 días en orden lunes-domingo.
-- Respeta días disponibles y duración.
-- Días de descanso también aparecen.
+
+- EXACTAMENTE 7 días.
+- Orden: lunes, martes, miércoles, jueves, viernes, sábado, domingo.
+- Incluye días de descanso.
+- Respeta días disponibles.
+- Respeta duración disponible por sesión.
+- No conviertas toda la semana en sesiones duras.
 - Fuerza: ejercicios, series, repeticiones, descanso e intensidad.
-- Carrera: duración/distancia y ritmo/zona/RPE; no inventes ritmos.
-- Nutrición y suplementos respetan exactamente lo pedido.
-- Si nutrición=none: valores 0, textos vacíos y arrays vacíos.
-- Si suplementos=none: supplements=[].
-- Devuelve solo JSON.`;
+- Carrera: duración/distancia y ritmo, zona o RPE.
+- No inventes ritmos si faltan datos.
+- Nutrición y suplementos deben respetar exactamente el cuestionario.
+
+Si nutrition.mode="none":
+
+- summary=""
+- kcalApprox=0
+- proteinG=0
+- carbsG=0
+- fatG=0
+- meals=[]
+- timingNotes=[]
+
+Si supplements.mode="none":
+
+- supplements=[]
+
+Devuelve solamente JSON.`;
+
 }
 
-function validateCore(x){
-  if(!x||!Number.isInteger(Number(x.totalWeeks))||Number(x.totalWeeks)<1) throw new Error("El plan maestro no contiene una duración válida.");
-  if(!Array.isArray(x.phases)||!x.phases.length) throw new Error("El plan maestro no contiene fases.");
-  return x;
-}
-function validateTargets(x,total){
-  if(!Array.isArray(x?.weeklyTargets)) throw new Error("La IA no devolvió objetivos semanales.");
-  if(x.weeklyTargets.length!==total) throw new Error(`Se esperaban ${total} objetivos semanales y se recibieron ${x.weeklyTargets.length}.`);
-  return x.weeklyTargets.map((t,i)=>({
-    week:i+1,
-    focus:t?.focus||"",
-    trainingSessions:Math.max(0,Math.round(Number(t?.trainingSessions||0))),
-    runningKmApprox:Number(t?.runningKmApprox||0),
-    weightTargetKg:Number(t?.weightTargetKg||0),
-    note:t?.note||""
-  }));
-}
-function normWeek(w,n){
-  if(!Array.isArray(w?.days)||w.days.length!==7) throw new Error(`La semana ${n} no contiene exactamente 7 días.`);
-  const names=["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
-  return {
-    week:n,focus:w.focus||"",loadNote:w.loadNote||"",
-    days:w.days.map((d,i)=>({
-      day:names[i],type:d?.type||"rest",typeLabel:d?.typeLabel||"",
-      title:d?.title||"",objective:d?.objective||"",
-      durationMin:Math.max(0,Math.round(Number(d?.durationMin||0))),
-      warmup:d?.warmup||"",mainWork:d?.mainWork||"",
-      exercises:Array.isArray(d?.exercises)?d.exercises:[],
-      cardio:{
-        distanceKm:Number(d?.cardio?.distanceKm||0),
-        durationMin:Math.max(0,Math.round(Number(d?.cardio?.durationMin||0))),
-        pace:d?.cardio?.pace||"",heartRate:d?.cardio?.heartRate||"",structure:d?.cardio?.structure||""
-      },
-      cooldown:d?.cooldown||"",
-      coachingNotes:Array.isArray(d?.coachingNotes)?d.coachingNotes:[],
-      nutrition:{
-        mode:d?.nutrition?.mode||"none",summary:d?.nutrition?.summary||"",
-        kcalApprox:Math.max(0,Math.round(Number(d?.nutrition?.kcalApprox||0))),
-        proteinG:Math.max(0,Math.round(Number(d?.nutrition?.proteinG||0))),
-        carbsG:Math.max(0,Math.round(Number(d?.nutrition?.carbsG||0))),
-        fatG:Math.max(0,Math.round(Number(d?.nutrition?.fatG||0))),
-        meals:Array.isArray(d?.nutrition?.meals)?d.nutrition.meals:[],
-        timingNotes:Array.isArray(d?.nutrition?.timingNotes)?d.nutrition.timingNotes:[]
-      },
-      supplements:Array.isArray(d?.supplements)?d.supplements:[]
-    }))
-  };
-}
 
-module.exports=async function handler(req,res){
-  if(req.method!=="POST"){res.setHeader("Allow","POST");return json(res,405,{error:"Método no permitido."});}
-  if(!process.env.GROQ_API_KEY) return json(res,500,{error:"Falta GROQ_API_KEY en Vercel."});
-  try{
-    const auth=String(req.headers.authorization||"");
-    const user=await verifyFirebaseToken(auth.startsWith("Bearer ")?auth.slice(7):"");
-    if(!user) return json(res,401,{error:"Sesión no válida."});
-    const profile=req.body?.profile;
-    if(!profile||profile.status!=="completed"||!profile.consent) return json(res,400,{error:"El cuestionario no está completo."});
+function normalizeWeek(
+  raw,
+  weekNumber
+) {
 
-    const action=String(req.body?.action||"masterCore");
+  if (
+    !Array.isArray(raw?.days) ||
+    raw.days.length !== 7
+  ) {
 
-    if(action==="masterCore"){
-      const core=validateCore(await groq(corePrompt(profile,user.email),1400));
-      return json(res,200,{core,meta:{provider:"groq",model:MODEL,generatedAt:new Date().toISOString()}});
-    }
+    throw new Error(
+      `La semana ${weekNumber} no contiene exactamente 7 días.`
+    );
 
-    if(action==="targets"){
-      const core=req.body?.core;
-      validateCore(core);
-      const total=Number(core.totalWeeks);
-      const data=await groq(targetsPrompt(profile,core),Math.min(2200,700+total*85));
-      const weeklyTargets=validateTargets(data,total);
-      return json(res,200,{weeklyTargets});
-    }
-
-    if(action==="week"){
-      const master=req.body?.master,n=Number(req.body?.weekNumber);
-      if(!master||!Number.isInteger(n)||n<1||n>Math.min(4,Number(master.totalWeeks||0))) return json(res,400,{error:"Semana no válida."});
-      const w=await groq(weekPrompt(profile,master,n,String(req.body?.previousWeekSummary||""),user.email),2400);
-      return json(res,200,{week:normWeek(w,n)});
-    }
-
-    return json(res,400,{error:"Acción desconocida."});
-  }catch(err){
-    console.error("FORJA21 generate-plan",err);
-    if(err?.code==="RATE_LIMIT") return json(res,429,{error:"Groq necesita esperar antes de continuar.",retryAfterSeconds:err.retryAfterSeconds||20});
-    if(err?.code==="REQUEST_TOO_LARGE") return json(res,413,{error:"Esta etapa es demasiado grande para el límite gratuito.",detail:err.message});
-    return json(res,500,{error:err?.message||"Error interno generando la planificación."});
   }
-};
+
+
+  const dayNames = [
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo"
+  ];
+
+
+  return {
+
+    week:
+      weekNumber,
+
+    focus:
+      raw.focus ||
+      "",
+
+    loadNote:
+      raw.loadNote ||
+      "",
+
+    days:
+      raw.days.map(
+        (day, index) => ({
+
+          day:
+            dayNames[index],
+
+          type:
+            day?.type ||
+            "rest",
+
+          typeLabel:
+            day?.typeLabel ||
+            "",
+
+          title:
+            day?.title ||
+            "",
+
+          objective:
+            day?.objective ||
+            "",
+
+          durationMin:
+            Math.max(
+              0,
+              Math.round(
+                Number(
+                  day?.durationMin ||
+                  0
+                )
+              )
+            ),
+
+          warmup:
+            day?.warmup ||
+            "",
+
+          mainWork:
+            day?.mainWork ||
+            "",
+
+          exercises:
+            Array.isArray(
+              day?.exercises
+            )
+              ? day.exercises
+              : [],
+
+          cardio: {
+
+            distanceKm:
+              Number(
+                day?.cardio?.distanceKm ||
+                0
+              ),
+
+            durationMin:
+              Math.max(
+                0,
+                Math.round(
+                  Number(
+                    day?.cardio?.durationMin ||
+                    0
+                  )
+                )
+              ),
+
+            pace:
+              day?.cardio?.pace ||
+              "",
+
+            heartRate:
+              day?.cardio?.heartRate ||
+              "",
+
+            structure:
+              day?.cardio?.structure ||
+              ""
+
+          },
+
+          cooldown:
+            day?.cooldown ||
+            "",
+
+          coachingNotes:
+            Array.isArray(
+              day?.coachingNotes
+            )
+              ? day.coachingNotes
+              : [],
+
+          nutrition: {
+
+            mode:
+              day?.nutrition?.mode ||
+              "none",
+
+            summary:
+              day?.nutrition?.summary ||
+              "",
+
+            kcalApprox:
+              Math.max(
+                0,
+                Math.round(
+                  Number(
+                    day?.nutrition?.kcalApprox ||
+                    0
+                  )
+                )
+              ),
+
+            proteinG:
+              Math.max(
+                0,
+                Math.round(
+                  Number(
+                    day?.nutrition?.proteinG ||
+                    0
+                  )
+                )
+              ),
+
+            carbsG:
+              Math.max(
+                0,
+                Math.round(
+                  Number(
+                    day?.nutrition?.carbsG ||
+                    0
+                  )
+                )
+              ),
+
+            fatG:
+              Math.max(
+                0,
+                Math.round(
+                  Number(
+                    day?.nutrition?.fatG ||
+                    0
+                  )
+                )
+              ),
+
+            meals:
+              Array.isArray(
+                day?.nutrition?.meals
+              )
+                ? day.nutrition.meals
+                : [],
+
+            timingNotes:
+              Array.isArray(
+                day?.nutrition?.timingNotes
+              )
+                ? day.nutrition.timingNotes
+                : []
+
+          },
+
+          supplements:
+            Array.isArray(
+              day?.supplements
+            )
+              ? day.supplements
+              : []
+
+        })
+      )
+
+  };
+
+}
+
+
+/* ==========================================================================
+   ENDPOINT
+   ========================================================================== */
+
+module.exports =
+  async function handler(
+    req,
+    res
+  ) {
+
+    if (
+      req.method !==
+      "POST"
+    ) {
+
+      res.setHeader(
+        "Allow",
+        "POST"
+      );
+
+      return json(
+        res,
+        405,
+        {
+          error:
+            "Método no permitido."
+        }
+      );
+
+    }
+
+
+    if (
+      !process.env.GROQ_API_KEY
+    ) {
+
+      return json(
+        res,
+        500,
+        {
+          error:
+            "Falta GROQ_API_KEY en Vercel."
+        }
+      );
+
+    }
+
+
+    try {
+
+      const authHeader =
+        String(
+          req.headers.authorization ||
+          ""
+        );
+
+
+      const user =
+        await verifyFirebaseToken(
+
+          authHeader.startsWith(
+            "Bearer "
+          )
+
+            ? authHeader.slice(7)
+
+            : ""
+
+        );
+
+
+      if (!user) {
+
+        return json(
+          res,
+          401,
+          {
+            error:
+              "Sesión no válida."
+          }
+        );
+
+      }
+
+
+      const profile =
+        req.body?.profile;
+
+
+      if (
+        !profile ||
+        profile.status !==
+          "completed" ||
+        !profile.consent
+      ) {
+
+        return json(
+          res,
+          400,
+          {
+            error:
+              "El cuestionario no está completo."
+          }
+        );
+
+      }
+
+
+      const action =
+        String(
+          req.body?.action ||
+          "masterCore"
+        );
+
+
+      /* ------------------------------------------------------------------
+         PLAN MAESTRO
+         ------------------------------------------------------------------ */
+
+      if (
+        action ===
+        "masterCore"
+      ) {
+
+        const core =
+          validateCore(
+
+            await groq(
+
+              corePrompt(
+                profile,
+                user.email
+              ),
+
+              1400
+
+            )
+
+          );
+
+
+        return json(
+          res,
+          200,
+          {
+
+            core,
+
+            meta: {
+
+              provider:
+                "groq",
+
+              model:
+                MODEL,
+
+              generatedAt:
+                new Date()
+                  .toISOString()
+
+            }
+
+          }
+        );
+
+      }
+
+
+      /* ------------------------------------------------------------------
+         OBJETIVOS SEMANALES POR BLOQUE
+         ------------------------------------------------------------------ */
+
+      if (
+        action ===
+        "targetsBatch"
+      ) {
+
+        const core =
+          req.body?.core;
+
+
+        validateCore(core);
+
+
+        const total =
+          Number(
+            core.totalWeeks
+          );
+
+
+        const weekFrom =
+          Number(
+            req.body?.weekFrom
+          );
+
+
+        const weekTo =
+          Number(
+            req.body?.weekTo
+          );
+
+
+        if (
+          !Number.isInteger(
+            weekFrom
+          ) ||
+          !Number.isInteger(
+            weekTo
+          ) ||
+          weekFrom < 1 ||
+          weekTo < weekFrom ||
+          weekTo > total ||
+          weekTo - weekFrom + 1 > 4
+        ) {
+
+          return json(
+            res,
+            400,
+            {
+              error:
+                "Bloque de objetivos semanales no válido."
+            }
+          );
+
+        }
+
+
+        const previousTargets =
+          Array.isArray(
+            req.body?.previousTargets
+          )
+            ? req.body.previousTargets
+            : [];
+
+
+        const data =
+          await groq(
+
+            targetsBatchPrompt(
+              profile,
+              core,
+              weekFrom,
+              weekTo,
+              previousTargets
+            ),
+
+            1000
+
+          );
+
+
+        const weeklyTargets =
+          validateTargetsBatch(
+            data,
+            weekFrom,
+            weekTo
+          );
+
+
+        return json(
+          res,
+          200,
+          {
+            weeklyTargets
+          }
+        );
+
+      }
+
+
+      /* ------------------------------------------------------------------
+         SEMANA DETALLADA
+         ------------------------------------------------------------------ */
+
+      if (
+        action ===
+        "week"
+      ) {
+
+        const master =
+          req.body?.master;
+
+
+        const weekNumber =
+          Number(
+            req.body?.weekNumber
+          );
+
+
+        if (
+          !master ||
+          !Number.isInteger(
+            weekNumber
+          ) ||
+          weekNumber < 1 ||
+          weekNumber >
+            Math.min(
+              4,
+              Number(
+                master.totalWeeks ||
+                0
+              )
+            )
+        ) {
+
+          return json(
+            res,
+            400,
+            {
+              error:
+                "Semana no válida."
+            }
+          );
+
+        }
+
+
+        const rawWeek =
+          await groq(
+
+            weekPrompt(
+              profile,
+              master,
+              weekNumber,
+              String(
+                req.body?.previousWeekSummary ||
+                ""
+              ),
+              user.email
+            ),
+
+            2400
+
+          );
+
+
+        const week =
+          normalizeWeek(
+            rawWeek,
+            weekNumber
+          );
+
+
+        return json(
+          res,
+          200,
+          {
+            week
+          }
+        );
+
+      }
+
+
+      return json(
+        res,
+        400,
+        {
+          error:
+            "Acción desconocida."
+        }
+      );
+
+
+    } catch (err) {
+
+      console.error(
+        "FORJA21 generate-plan",
+        err
+      );
+
+
+      if (
+        err?.code ===
+        "RATE_LIMIT"
+      ) {
+
+        return json(
+          res,
+          429,
+          {
+
+            error:
+              "Groq necesita esperar antes de continuar.",
+
+            retryAfterSeconds:
+              err.retryAfterSeconds ||
+              20
+
+          }
+        );
+
+      }
+
+
+      if (
+        err?.code ===
+        "REQUEST_TOO_LARGE"
+      ) {
+
+        return json(
+          res,
+          413,
+          {
+
+            error:
+              "Esta etapa es demasiado grande para el límite gratuito de Groq.",
+
+            detail:
+              err.message
+
+          }
+        );
+
+      }
+
+
+      return json(
+        res,
+        500,
+        {
+          error:
+            err?.message ||
+            "Error interno generando la planificación."
+        }
+      );
+
+    }
+
+  };
