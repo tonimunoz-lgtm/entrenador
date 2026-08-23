@@ -110,6 +110,33 @@ const CloudSync = {
     if (!FIREBASE_ENABLED || !uid) return;
     await this.userRef(uid).set({ settings }, { merge: true });
   },
+
+  /* ---------------------------------------------------------------
+     Datos del nuevo sistema personalizado.
+     Se guardan aparte de settings para no mezclar nunca los perfiles
+     legacy de Toni/Beizga con el onboarding de usuarios nuevos.
+     --------------------------------------------------------------- */
+  async pullPersonalizedOnboarding(uid) {
+    if (!FIREBASE_ENABLED || !uid) return null;
+    const snap = await this.userRef(uid).collection("personalized").doc("onboarding").get();
+    return snap.exists ? snap.data() : null;
+  },
+
+  async pushPersonalizedOnboarding(uid, payload) {
+    if (!FIREBASE_ENABLED || !uid) return;
+    await this.userRef(uid).collection("personalized").doc("onboarding").set(payload, { merge: true });
+  },
+
+  async pullPersonalizedPlan(uid) {
+    if (!FIREBASE_ENABLED || !uid) return null;
+    const snap = await this.userRef(uid).collection("personalized").doc("plan").get();
+    return snap.exists ? snap.data() : null;
+  },
+
+  async pushPersonalizedPlan(uid, payload) {
+    if (!FIREBASE_ENABLED || !uid) return;
+    await this.userRef(uid).collection("personalized").doc("plan").set(payload, { merge: false });
+  },
   async pushWeight(uid, entry) {
     if (!FIREBASE_ENABLED || !uid) return;
     await this.userRef(uid).collection("weights").doc(String(entry.week)).set(entry);
@@ -124,7 +151,7 @@ const CloudSync = {
   },
   async deleteAllCloudData(uid) {
     if (!FIREBASE_ENABLED || !uid) return;
-    const cols = ["weights", "workouts", "supps"];
+    const cols = ["weights", "workouts", "supps", "personalized"];
     for (const col of cols) {
       const snap = await this.userRef(uid).collection(col).get();
       await Promise.all(snap.docs.map(d => d.ref.delete()));
