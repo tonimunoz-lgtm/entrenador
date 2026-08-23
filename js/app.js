@@ -1666,27 +1666,21 @@ if ("serviceWorker" in navigator) {
 
 /* ---------------- Nuevo sistema personalizado ---------------- */
 function renderPersonalizedSetupStart(user) {
+  if (typeof PersonalizedOnboarding !== "undefined") {
+    PersonalizedOnboarding.start(user);
+    return;
+  }
+
+  // Fallback de seguridad por si una caché antigua todavía no tiene el fichero.
   $("#bottomnav").style.display = "none";
   $("#routeBar").innerHTML = "";
   const statStrip = $("#statStrip");
   if (statStrip) statStrip.innerHTML = "";
   $("#topbarSub").textContent = "Plan personalizado";
-
-  const email = user?.email || "tu cuenta";
   $("#view").innerHTML = `
-    <div class="hero">
-      <div class="hero-eyebrow">FORJA21 · NUEVO PERFIL</div>
-      <div class="hero-title">Vamos a construir tu plan</div>
-      <p class="hero-desc">Esta cuenta no utilizará el plan de Toni ni el de Beizga. Tendrá una planificación propia según tus objetivos, disponibilidad, experiencia, nutrición y suplementación.</p>
-      <div class="badge-row">
-        <span class="badge">👤 ${email}</span>
-        <span class="badge">✨ Plan individual</span>
-      </div>
-    </div>
-
     <div class="card">
-      <h4>Configuración personalizada preparada</h4>
-      <p class="phase-summary" style="margin-top:6px">El siguiente paso será el cuestionario inteligente. Por ahora esta pantalla confirma que los usuarios nuevos ya están separados de los dos planes existentes.</p>
+      <h4>Actualizando Forja21…</h4>
+      <p class="phase-summary" style="margin-top:6px">Recarga la aplicación para cargar el nuevo cuestionario personalizado.</p>
     </div>`;
 }
 
