@@ -638,34 +638,25 @@ function renderOnboarding() {
   $("#topbarSub").textContent = "Bienvenida";
 
   const suggestedStart = dateKey(nextMonday(new Date()));
-
   const cloudReady = typeof CloudSync !== "undefined" && CloudSync.enabled;
-  const signInCard = cloudReady ? `
-    <div class="card" id="onboardSignInCard" style="border-color: color-mix(in srgb, var(--brand) 40%, var(--border))">
-      <h4>¿Ya tienes cuenta?</h4>
-      <p class="phase-summary" style="margin-top:6px">Si perdiste el móvil o es un dispositivo nuevo, inicia sesión aquí para recuperar todo tu progreso en vez de configurar de cero.</p>
+
+  // Con la nube configurada (el caso normal), el acceso es siempre crear cuenta /
+  // iniciar sesión — es lo que lleva a cada persona a su propio cuestionario y a su
+  // propio plan de IA. Ya no depende de encontrar un botón enterrado en Ajustes.
+  const authCard = cloudReady ? `
+    <div class="card" id="onboardAuthCard" style="border-color: color-mix(in srgb, var(--brand) 40%, var(--border))">
+      <h4>Empieza aquí</h4>
+      <p class="phase-summary" style="margin-top:6px">Crea tu cuenta para que la IA te prepare tu plan. Si ya tienes una, inicia sesión y recuperas todo tu progreso.</p>
       <div class="field" style="margin-top:12px"><label>Email</label><input id="obAuthEmail" type="email" placeholder="tu@email.com" autocomplete="email" /></div>
-      <div class="field"><label>Contraseña</label><input id="obAuthPassword" type="password" placeholder="Tu contraseña" autocomplete="current-password" /></div>
-      <button class="btn btn-primary" id="obSignInBtn">Iniciar sesión y recuperar mis datos</button>
-    </div>
-    <div class="divider" style="margin: 18px 0"></div>
-    <p class="phase-summary" style="margin-bottom:10px">O configura el plan desde cero:</p>` : "";
-
-  $("#view").innerHTML = `
-    <div class="hero">
-      <div class="hero-eyebrow">Bienvenido a Forja21</div>
-      <div class="hero-title">${PLAN_COPY.welcomeTitle}</div>
-      <p class="hero-desc">${PLAN_COPY.welcomeDesc(PROFILE_DEFAULTS.raceGoal, WEEKLY_WEIGHTS_BLOQUE1.length ? WEEKLY_WEIGHTS_BLOQUE1[WEEKLY_WEIGHTS_BLOQUE1.length - 1].weight : "")}</p>
-      <div class="badge-row">
-        ${PLAN_COPY.welcomeBadges.map(b => `<span class="badge">${b}</span>`).join("")}
+      <div class="field"><label>Contraseña</label><input id="obAuthPassword" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" /></div>
+      <div class="btn-row" style="margin-top:6px">
+        <button class="btn btn-primary" id="obSignUpBtn">Crear cuenta y empezar mi plan</button>
+        <button class="btn btn-ghost" id="obSignInBtn">Ya tengo cuenta · Iniciar sesión</button>
       </div>
-    </div>
-
-    ${signInCard}
-
+    </div>` : `
     <div class="card">
       <h4>Vamos a configurarlo</h4>
-      <p class="phase-summary" style="margin-top:6px">Solo hace falta esto una vez.</p>
+      <p class="phase-summary" style="margin-top:6px">La sincronización en la nube no está configurada en este dispositivo, así que este plan de ejemplo se queda guardado solo aquí — no genera un plan de IA personalizado.</p>
       <form id="onboardForm" style="margin-top:12px">
         <div class="field">
           <label>¿Cómo te llamas?</label>
@@ -683,6 +674,38 @@ function renderOnboarding() {
       </form>
     </div>`;
 
+  $("#view").innerHTML = `
+    <div class="hero">
+      <div class="hero-eyebrow">Bienvenido a Forja21</div>
+      <div class="hero-title">Tu entrenador personal, a tu medida</div>
+      <p class="hero-desc">Cuéntanos tu objetivo — una carrera, perder grasa, ganar músculo, fuerza o simplemente estar en forma — y la IA te prepara un plan de entreno y nutrición semana a semana, pensado solo para ti. Tú marcas la meta, Forja21 traza el camino.</p>
+      <div class="badge-row">
+        <span class="badge">🤖 Plan generado con IA</span>
+        <span class="badge">📅 Semana a semana</span>
+        <span class="badge">🎯 A tu objetivo</span>
+      </div>
+    </div>
+
+    ${authCard}`;
+
+  $("#obSignUpBtn")?.addEventListener("click", async () => {
+    const email = $("#obAuthEmail").value.trim();
+    const password = $("#obAuthPassword").value;
+    if (!email || !password) { showToast("Escribe tu email y contraseña"); return; }
+    const btn = $("#obSignUpBtn");
+    btn.disabled = true;
+    btn.textContent = "Creando tu cuenta…";
+    try {
+      await CloudSync.signUpWithEmail(email, password);
+      // handleCloudAuthChange detecta que es un usuario nuevo y arranca el
+      // cuestionario personalizado — no hace falta hacer nada más aquí.
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = "Crear cuenta y empezar mi plan";
+      showToast(translateAuthError(e));
+    }
+  });
+
   $("#obSignInBtn")?.addEventListener("click", async () => {
     const email = $("#obAuthEmail").value.trim();
     const password = $("#obAuthPassword").value;
@@ -695,7 +718,7 @@ function renderOnboarding() {
     }
   });
 
-  $("#onboardForm").addEventListener("submit", (e) => {
+  $("#onboardForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const pickedDate = parseDate(fd.get("startDate"));
@@ -1179,7 +1202,27 @@ function phaseCalorieBalance(p) {
 
 function renderFases() {
   const { week } = todayInfo();
-  let html = "";
+
+  // "Tu objetivo": mismo contenido que antes se veía solo en la bienvenida (antes de
+  // iniciar sesión), ahora movido aquí — es donde tiene sentido una vez ya estás dentro
+  // de tu plan. PLAN_COPY ya se resuelve de forma distinta para Toni, Beizga o cualquier
+  // plan personalizado, así que este bloque funciona igual para los tres sin lógica extra.
+  const goalDesc = PLAN_COPY.welcomeDesc(
+    typeof PROFILE_DEFAULTS !== "undefined" ? PROFILE_DEFAULTS.raceGoal : "",
+    typeof WEEKLY_WEIGHTS_BLOQUE1 !== "undefined" && WEEKLY_WEIGHTS_BLOQUE1.length
+      ? WEEKLY_WEIGHTS_BLOQUE1[WEEKLY_WEIGHTS_BLOQUE1.length - 1].weight
+      : ""
+  );
+  let html = `
+    <div class="hero">
+      <div class="hero-eyebrow">Tu objetivo</div>
+      <div class="hero-title">${PLAN_COPY.welcomeTitle}</div>
+      ${goalDesc ? `<p class="hero-desc">${goalDesc}</p>` : ""}
+      ${PLAN_COPY.welcomeBadges && PLAN_COPY.welcomeBadges.length ? `
+      <div class="badge-row">
+        ${PLAN_COPY.welcomeBadges.map(b => `<span class="badge">${b}</span>`).join("")}
+      </div>` : ""}
+    </div>`;
   PHASES.forEach(p => {
     const isCurrent = week >= p.weeks[0] && week <= p.weeks[1];
     const isPast = week > p.weeks[1];
