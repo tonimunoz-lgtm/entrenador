@@ -1,6 +1,7 @@
-/* FORJA21 — Groq por etapas, objetivos semanales en bloques */
+/* FORJA21 — Mistral por etapas, objetivos semanales en bloques */
 
-const MODEL = "openai/gpt-oss-120b";
+const MODEL = "mistral-large-latest";
+const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
 
 const FIREBASE_WEB_API_KEY =
   process.env.FIREBASE_WEB_API_KEY ||
@@ -74,28 +75,40 @@ function extractJson(text) {
   const last = clean.lastIndexOf("}");
 
   if (first >= 0 && last > first) {
-    return JSON.parse(
-      clean.slice(first, last + 1)
-    );
+
+    try {
+      return JSON.parse(
+        clean.slice(first, last + 1)
+      );
+    } catch (_) {}
+
   }
 
-  throw new Error(
+  // Casi siempre significa que la respuesta se cortó a mitad (max_tokens
+  // demasiado justo) — se marca como INVALID_JSON para que el llamador la
+  // reintente con más presupuesto de tokens en vez de fallar directamente.
+  const e = new Error(
     "La IA no devolvió un JSON válido."
   );
+
+  e.code = "INVALID_JSON";
+
+  throw e;
+
 }
 
 
-async function groqOnce(prompt, maxTokens) {
+async function callModelOnce(prompt, maxTokens) {
 
   const r = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
+    MISTRAL_API_URL,
     {
       method: "POST",
 
       headers: {
         "Content-Type": "application/json",
         "Authorization":
-          `Bearer ${process.env.GROQ_API_KEY}`
+          `Bearer ${process.env.MISTRAL_API_KEY}`
       },
 
       body: JSON.stringify({
@@ -115,17 +128,11 @@ async function groqOnce(prompt, maxTokens) {
 
         temperature: 0.1,
 
-        max_completion_tokens: maxTokens,
-
-        // openai/gpt-oss-120b es un modelo "razonador": por defecto (reasoning_effort
-        // "medium") gasta una parte importante del propio max_completion_tokens en
-        // pensar antes de escribir el JSON final. Con las respuestas largas que pide
-        // este endpoint (una semana completa con comidas, ejercicios y suplementos),
-        // ese razonamiento se comía casi todo el presupuesto de tokens, el JSON salía
-        // cortado a mitad, y Groq lo rechazaba con "Failed to validate JSON. Please
-        // adjust your prompt." Bajamos el esfuerzo de razonamiento al mínimo: esta
-        // tarea es rellenar una plantilla, no resolver un problema complejo.
-        reasoning_effort: "low",
+        // La API de Mistral usa "max_tokens" (no "max_completion_tokens" como
+        // Groq/OpenAI). Mistral Large tampoco es un modelo "razonador" — no
+        // gasta parte del presupuesto pensando en silencio antes de escribir
+        // el JSON, así que todo el presupuesto va al JSON final.
+        max_tokens: maxTokens,
 
         response_format: {
           type: "json_object"
@@ -145,17 +152,21 @@ async function groqOnce(prompt, maxTokens) {
 
   if (!r.ok) {
 
+    // Mistral devuelve el error en la raíz del cuerpo (p.ej.
+    // {"object":"error","message":"Rate limit exceeded","type":"rate_limited"}),
+    // no anidado bajo "error" como Groq/OpenAI — por eso se prueba raw?.message
+    // como segunda opción.
     const message =
       raw?.error?.message ||
       raw?.message ||
-      `Groq devolvió ${r.status}.`;
+      `Mistral devolvió ${r.status}.`;
 
     const tooLarge =
-      /request too large/i.test(message);
+      /request too large|too many tokens/i.test(message);
 
     const limited =
       r.status === 429 ||
-      /tokens per minute|rate limit|too many requests/i.test(message);
+      /tokens per minute|rate limit|too many requests|rate_limited/i.test(message);
 
     const invalidJson =
       /failed to validate json|failed_generation|invalid json|json_validate_failed/i.test(message);
@@ -185,9 +196,9 @@ async function groqOnce(prompt, maxTokens) {
 
     } else if (invalidJson) {
 
-      // Fallo de generación de Groq: el modelo no completó un JSON válido dentro
-      // del presupuesto de tokens (normalmente porque la respuesta pedida era muy
-      // larga). Es un fallo puntual — casi siempre desaparece si se reintenta.
+      // Fallo de generación puntual: el modelo no completó un JSON válido
+      // dentro del presupuesto de tokens. Casi siempre desaparece si se
+      // reintenta con más margen.
       e.code = "INVALID_JSON";
 
     } else {
@@ -213,7 +224,7 @@ async function groqOnce(prompt, maxTokens) {
 }
 
 
-async function groq(prompt, maxTokens) {
+async function callModel(prompt, maxTokens) {
 
   const attempts = [
     maxTokens,
@@ -227,15 +238,15 @@ async function groq(prompt, maxTokens) {
 
     try {
 
-      return await groqOnce(prompt, attempts[i]);
+      return await callModelOnce(prompt, attempts[i]);
 
     } catch (err) {
 
       lastErr = err;
 
       // Solo merece la pena reintentar cuando el fallo es de generación
-      // (JSON incompleto o inválido de Groq). Límites de tasa o payload
-      // demasiado grande no se arreglan reintentando con más tokens.
+      // (JSON incompleto o inválido). Límites de tasa o payload demasiado
+      // grande no se arreglan reintentando con más tokens.
       if (err?.code !== "INVALID_JSON" || i === attempts.length - 1) throw err;
 
     }
@@ -1148,7 +1159,7 @@ module.exports =
 
 
     if (
-      !process.env.GROQ_API_KEY
+      !process.env.MISTRAL_API_KEY
     ) {
 
       return json(
@@ -1156,7 +1167,7 @@ module.exports =
         500,
         {
           error:
-            "Falta GROQ_API_KEY en Vercel."
+            "Falta MISTRAL_API_KEY en Vercel."
         }
       );
 
@@ -1242,7 +1253,7 @@ module.exports =
         const core =
           validateCore(
 
-            await groq(
+            await callModel(
 
               corePrompt(
                 profile,
@@ -1351,7 +1362,7 @@ module.exports =
 
 
         const data =
-          await groq(
+          await callModel(
 
             targetsBatchPrompt(
               profile,
@@ -1433,7 +1444,7 @@ module.exports =
 
 
         const rawWeek =
-          await groq(
+          await callModel(
 
             weekPrompt(
               profile,
@@ -1498,7 +1509,7 @@ module.exports =
           {
 
             error:
-              "Groq necesita esperar antes de continuar.",
+              "Mistral necesita esperar antes de continuar.",
 
             retryAfterSeconds:
               err.retryAfterSeconds ||
@@ -1521,7 +1532,7 @@ module.exports =
           {
 
             error:
-              "Esta etapa es demasiado grande para el límite gratuito de Groq.",
+              "Esta etapa es demasiado grande para el límite gratuito de Mistral.",
 
             detail:
               err.message
@@ -1537,7 +1548,7 @@ module.exports =
         "INVALID_JSON"
       ) {
 
-        // Groq no logró completar un JSON válido ni tras los reintentos internos
+        // Mistral no logró completar un JSON válido ni tras los reintentos internos
         // (groqOnce con más presupuesto de tokens cada vez). Se trata como algo
         // temporal: el cliente ya sabe reintentar automáticamente ante un 429.
         return json(
