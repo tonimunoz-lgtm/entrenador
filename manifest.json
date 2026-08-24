@@ -33,6 +33,13 @@
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Calendario mensual con tu entreno y nutrición de cada día"
+    },
+    {
+      "src": "screenshots/bienvenida.png",
+      "sizes": "535x489",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Forja21 — entrenamiento y nutrición personalizados con IA"
     }
   ],
   "shortcuts": [
