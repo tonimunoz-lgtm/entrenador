@@ -1,104 +1,90 @@
-const CACHE_NAME = "forja21-v23";
-const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./css/style.css",
-  "./js/data.js",
-  "./js/plan-v2-arms.js",
-  "./js/plan-router.js",
-  "./js/firebase-sync.js",
-  "./js/ai-plan-service.js",
-  "./js/onboarding-personalized.js",
-  "./js/personalized-plan-adapter.js",
-  "./js/app.js",
-  "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png",
-  "./icons/apple-touch-icon-120.png",
-  "./icons/apple-touch-icon-152.png",
-  "./icons/apple-touch-icon-167.png",
-  "./icons/apple-touch-icon-180.png",
-  "./icons/favicon-32.png"
-];
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Forja21 · Tu entrenador hacia Granollers</title>
+<meta name="description" content="Plan de entreno, nutrición y peso hacia la Mitja Marató de Granollers y la definición de junio." />
+<meta name="theme-color" content="#FF5A00" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" />
+<link rel="icon" href="icons/favicon-16.png" sizes="16x16" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-icon-120.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-icon-152.png" />
+<link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-icon-167.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Forja21" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&family=Anton&family=Archivo:wght@500;600;700;800&family=Space+Mono:wght@500;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).catch(() => {})
-  );
-  self.skipWaiting();
-});
+<div id="app">
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img src="icons/icon-192.png" alt="" class="brand-mark" />
+        <div class="brand-text">
+          <span class="brand-name">FORJA<span class="accent">21</span></span>
+          <span class="brand-sub" id="topbarSub">Cargando plan…</span>
+        </div>
+      </div>
+      <button class="icon-btn" id="installBtn" title="Instalar app" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="route-bar" id="routeBar" aria-label="Progreso del plan"></div>
+    <div class="stat-strip" id="statStrip"></div>
+  </header>
 
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
+  <main id="view" class="view"></main>
 
-  // No tocar peticiones a otros orígenes (Firebase Auth, Firestore, Google) —
-  // tienen su propia lógica de red/streaming que el SW no debe interferir.
-  if (new URL(req.url).origin !== location.origin) return;
+  <nav class="bottomnav" id="bottomnav">
+    <button class="navbtn" data-tab="hoy">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 6.9L21 11l-6.6 2.1L12 20l-2.4-6.9L3 11l6.6-2.1L12 2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span>Hoy</span>
+    </button>
+    <button class="navbtn" data-tab="calendario">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span>Calendario</span>
+    </button>
+    <button class="navbtn" data-tab="fases">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Fases</span>
+    </button>
+    <button class="navbtn" data-tab="peso">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span>Progreso</span>
+    </button>
+    <button class="navbtn" data-tab="ajustes">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M19.4 13a7.9 7.9 0 000-2l2-1.5-2-3.4-2.3.9a8 8 0 00-1.7-1L15 3h-4l-.4 2.9a8 8 0 00-1.7 1l-2.3-.9-2 3.4L6.6 11a7.9 7.9 0 000 2l-2 1.5 2 3.4 2.3-.9a8 8 0 001.7 1L11 21h4l.4-2.9a8 8 0 001.7-1l2.3.9 2-3.4-2-1.6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+      <span>Ajustes</span>
+    </button>
+  </nav>
 
-  // Network-first for navigation requests (keep app fresh), fall back to cache offline.
-  if (req.mode === "navigate") {
-    event.respondWith(
-      fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then((c) => c.put(req, copy));
-        return res;
-      }).catch(() => caches.match("./index.html"))
-    );
-    return;
-  }
+</div>
 
-  // Cache-first for static assets.
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req).then((res) => {
-        if (res.ok && new URL(req.url).origin === location.origin) {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(req, copy));
-        }
-        return res;
-      }).catch(() => cached);
-    })
-  );
-});
+<div id="toast" class="toast" hidden></div>
 
-// Aviso de respaldo en segundo plano (solo donde el navegador soporta Periodic
-// Background Sync — hoy en día básicamente Chrome/Android con la PWA instalada
-// y "engagement" suficiente). No puede calcular el entreno exacto del día
-// porque el service worker no tiene acceso a localStorage, así que se limita
-// a recordar que se abra la app; el aviso preciso ("hoy toca báscula/gimnasio")
-// se manda desde la propia app en cuanto la abres (ver js/app.js).
-self.addEventListener("periodicsync", (event) => {
-  if (event.tag === "forja21-daily-check") {
-    event.waitUntil(
-      self.registration.showNotification("Forja21", {
-        body: "Abre la app para ver qué toca hoy: entreno, comida y si hay que pesarse.",
-        icon: "icons/icon-192.png",
-        badge: "icons/icon-192.png",
-        tag: "forja21-daily-fallback"
-      })
-    );
-  }
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientsArr) => {
-      const existing = clientsArr.find((c) => c.url.includes(self.registration.scope));
-      if (existing) return existing.focus();
-      return self.clients.openWindow("./index.html");
-    })
-  );
-});
+<!-- Firebase (opcional): no hace nada hasta que se configure en js/firebase-sync.js -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/data.js"></script>
+<script src="js/plan-v2-arms.js"></script>
+<script src="js/plan-router.js"></script>
+<script src="js/firebase-sync.js"></script>
+<script src="js/ai-plan-service.js"></script>
+<script src="js/onboarding-personalized.js"></script>
+<script src="js/personalized-plan-adapter.js"></script>
+<script src="js/app.js"></script>
+<script src="js/gamification.js"></script>
+</body>
+</html>
