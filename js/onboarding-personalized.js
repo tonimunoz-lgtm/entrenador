@@ -459,7 +459,7 @@
         </div>
 
         <button class="btn btn-primary" id="generatePersonalizedPlan" style="margin-top:14px;width:100%">${partialPlan ? "✨ Continuar generación" : "✨ Generar mi plan"}</button>
-        <p class="po-help po-center" style="margin-top:10px">Con el nivel gratuito de Groq puede haber pequeñas esperas entre etapas. La app continuará automáticamente y no repetirá lo ya guardado.</p>
+        <p class="po-help po-center" style="margin-top:10px">Con el nivel gratuito de Mistral puede haber pequeñas esperas entre etapas. La app continuará automáticamente y no repetirá lo ya guardado.</p>
       </div>` : ""}
 
       <div class="card po-card">
@@ -499,7 +499,7 @@
 
         if(detail){
           if(info.type==="waiting"){
-            detail.textContent="No es un error: estamos respetando la cuota gratuita de Groq. La generación seguirá sola.";
+            detail.textContent="No es un error: estamos respetando la cuota gratuita de Mistral. La generación seguirá sola.";
           }else if(info.type==="weekDone"){
             detail.textContent=`La semana ${info.week} ya está guardada en Firestore.`;
           }else if(info.type==="masterDone" || info.type==="coreDone"){
