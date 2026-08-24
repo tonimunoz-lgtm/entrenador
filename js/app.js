@@ -52,7 +52,7 @@ const THEMES = [
 ];
 
 function applyTheme(themeId) {
-  document.documentElement.setAttribute("data-theme", themeId || "classic");
+  document.documentElement.setAttribute("data-theme", themeId || "combustion");
 }
 
 function saveTheme(themeId) {
@@ -1472,7 +1472,7 @@ function renderAjustes() {
       </div>`;
   }
 
-  const currentTheme = s.theme || "classic";
+  const currentTheme = s.theme || "combustion";
   let html = accountHtml + `
     <div class="section-title">Apariencia</div>
     <div class="card">
@@ -1886,12 +1886,12 @@ async function renderPersonalizedSetupStart(user) {
 
 /* ---------------- Init ---------------- */
 function boot() {
-  // El tema "Aura" se ha retirado — si algún usuario lo tenía guardado, migramos a "classic".
+  // El tema "Aura" se ha retirado — si algún usuario lo tenía guardado, migramos al nuevo por defecto.
   if (state.settings.theme === "aura") {
-    state.settings.theme = "classic";
+    state.settings.theme = "combustion";
     storeSet(STORE_KEYS.settings, state.settings);
   }
-  applyTheme(state.settings.theme || "classic");
+  applyTheme(state.settings.theme || "combustion");
   if (isStandalone()) $("#installBtn").hidden = true;
 
   const personalizedUser = typeof ForjaPlanRouter !== "undefined"
