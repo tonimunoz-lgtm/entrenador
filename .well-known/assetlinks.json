@@ -2,7 +2,7 @@
       "relation": ["delegate_permission/common.handle_all_urls"],
       "target": {
         "namespace": "android_app",
-        "package_name": "com.tonimunoz.forja21",
-        "sha256_cert_fingerprints": ["E8:16:DF:5D:A6:9A:7E:5A:66:2C:5B:D5:A8:66:CA:CB:F3:46:47:5A:FC:2D:B6:8F:99:11:3C:CA:8D:E6:58:CE"]
+        "package_name": "com.forja21.app",
+        "sha256_cert_fingerprints": ["05:F9:F9:0E:33:CF:31:53:ED:48:D9:D1:88:41:06:81:B7:5C:06:5C:CE:BB:25:57:09:AC:27:A9:93:D4:31:7D"]
       }
     }]
