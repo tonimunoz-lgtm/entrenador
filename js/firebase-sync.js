@@ -157,6 +157,15 @@ const CloudSync = {
       await Promise.all(snap.docs.map(d => d.ref.delete()));
     }
     await this.userRef(uid).delete();
+  },
+  // Borra los datos Y la cuenta de Firebase Authentication (no solo los datos).
+  // Firebase exige un login "reciente" para esta operación; si ha pasado tiempo
+  // desde el último inicio de sesión, lanza auth/requires-recent-login y hay que
+  // pedir que vuelva a iniciar sesión antes de reintentar.
+  async deleteAccount(uid) {
+    if (!FIREBASE_ENABLED || !uid) return;
+    await this.deleteAllCloudData(uid);
+    if (fbAuth.currentUser) await fbAuth.currentUser.delete();
   }
 };
 
