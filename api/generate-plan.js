@@ -85,7 +85,7 @@ function extractJson(text) {
 }
 
 
-async function groq(prompt, maxTokens) {
+async function groqOnce(prompt, maxTokens) {
 
   const r = await fetch(
     "https://api.groq.com/openai/v1/chat/completions",
@@ -117,6 +117,16 @@ async function groq(prompt, maxTokens) {
 
         max_completion_tokens: maxTokens,
 
+        // openai/gpt-oss-120b es un modelo "razonador": por defecto (reasoning_effort
+        // "medium") gasta una parte importante del propio max_completion_tokens en
+        // pensar antes de escribir el JSON final. Con las respuestas largas que pide
+        // este endpoint (una semana completa con comidas, ejercicios y suplementos),
+        // ese razonamiento se comía casi todo el presupuesto de tokens, el JSON salía
+        // cortado a mitad, y Groq lo rechazaba con "Failed to validate JSON. Please
+        // adjust your prompt." Bajamos el esfuerzo de razonamiento al mínimo: esta
+        // tarea es rellenar una plantilla, no resolver un problema complejo.
+        reasoning_effort: "low",
+
         response_format: {
           type: "json_object"
         }
@@ -147,6 +157,9 @@ async function groq(prompt, maxTokens) {
       r.status === 429 ||
       /tokens per minute|rate limit|too many requests/i.test(message);
 
+    const invalidJson =
+      /failed to validate json|failed_generation|invalid json|json_validate_failed/i.test(message);
+
 
     const e = new Error(message);
 
@@ -170,6 +183,13 @@ async function groq(prompt, maxTokens) {
           ? Math.ceil(retryHeader)
           : 20;
 
+    } else if (invalidJson) {
+
+      // Fallo de generación de Groq: el modelo no completó un JSON válido dentro
+      // del presupuesto de tokens (normalmente porque la respuesta pedida era muy
+      // larga). Es un fallo puntual — casi siempre desaparece si se reintenta.
+      e.code = "INVALID_JSON";
+
     } else {
 
       e.code =
@@ -189,6 +209,40 @@ async function groq(prompt, maxTokens) {
 
 
   return extractJson(content);
+
+}
+
+
+async function groq(prompt, maxTokens) {
+
+  const attempts = [
+    maxTokens,
+    Math.round(maxTokens * 1.5),
+    Math.round(maxTokens * 2)
+  ];
+
+  let lastErr = null;
+
+  for (let i = 0; i < attempts.length; i++) {
+
+    try {
+
+      return await groqOnce(prompt, attempts[i]);
+
+    } catch (err) {
+
+      lastErr = err;
+
+      // Solo merece la pena reintentar cuando el fallo es de generación
+      // (JSON incompleto o inválido de Groq). Límites de tasa o payload
+      // demasiado grande no se arreglan reintentando con más tokens.
+      if (err?.code !== "INVALID_JSON" || i === attempts.length - 1) throw err;
+
+    }
+
+  }
+
+  throw lastErr;
 
 }
 
@@ -1195,7 +1249,7 @@ module.exports =
                 user.email
               ),
 
-              1400
+              2200
 
             )
 
@@ -1307,7 +1361,7 @@ module.exports =
               previousTargets
             ),
 
-            1000
+            1600
 
           );
 
@@ -1392,7 +1446,7 @@ module.exports =
               user.email
             ),
 
-            2400
+            6000
 
           );
 
@@ -1471,6 +1525,30 @@ module.exports =
 
             detail:
               err.message
+
+          }
+        );
+
+      }
+
+
+      if (
+        err?.code ===
+        "INVALID_JSON"
+      ) {
+
+        // Groq no logró completar un JSON válido ni tras los reintentos internos
+        // (groqOnce con más presupuesto de tokens cada vez). Se trata como algo
+        // temporal: el cliente ya sabe reintentar automáticamente ante un 429.
+        return json(
+          res,
+          429,
+          {
+
+            error:
+              "La IA ha tardado en generar un plan válido — reintentando automáticamente.",
+
+            retryAfterSeconds: 5
 
           }
         );
