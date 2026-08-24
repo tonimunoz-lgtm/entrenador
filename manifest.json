@@ -1,7 +1,8 @@
 {
-  "name": "Forja21 · Entrenador Granollers",
+  "id": "/",
+  "name": "Forja21 · Entrenamiento y nutrición con IA",
   "short_name": "Forja21",
-  "description": "Plan de entreno, nutrición y peso hacia la Mitja Marató de Granollers y la definición de junio.",
+  "description": "Entrenamiento y nutrición personalizados con IA, semana a semana, según tu propio objetivo.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -9,9 +10,27 @@
   "background_color": "#F5F6F8",
   "theme_color": "#FF5A00",
   "lang": "es",
+  "categories": ["health", "fitness", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Hoy",
+      "short_name": "Hoy",
+      "description": "Ver el entreno y la nutrición de hoy",
+      "url": "./index.html?tab=hoy",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Calendario",
+      "short_name": "Calendario",
+      "description": "Ver el calendario de la semana",
+      "url": "./index.html?tab=calendario",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ]
 }
