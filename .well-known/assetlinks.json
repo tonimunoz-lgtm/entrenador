@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.tonimunoz.forja21",
+        "sha256_cert_fingerprints": ["E8:16:DF:5D:A6:9A:7E:5A:66:2C:5B:D5:A8:66:CA:CB:F3:46:47:5A:FC:2D:B6:8F:99:11:3C:CA:8D:E6:58:CE"]
+      }
+    }]
