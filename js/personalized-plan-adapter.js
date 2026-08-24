@@ -1,7 +1,7 @@
 /* ==========================================================================
    FORJA21 — Adaptador del plan personalizado a la interfaz legacy
 
-   Convierte el JSON generado por Groq al formato que ya usan:
+   Convierte el JSON generado por Mistral al formato que ya usan:
    - Hoy
    - Calendario
    - Fases
