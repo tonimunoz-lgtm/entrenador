@@ -653,7 +653,7 @@ function renderOnboarding() {
         <button class="btn btn-primary" id="obSignUpBtn">Crear cuenta y empezar mi plan</button>
         <button class="btn btn-ghost" id="obSignInBtn">Ya tengo cuenta · Iniciar sesión</button>
       </div>
-      <p class="phase-summary" style="margin-top:12px; font-size:11.5px">Al crear una cuenta aceptas nuestra <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--brand-2); font-weight:600">política de privacidad</a>.</p>
+      <p class="phase-summary" style="margin-top:12px; font-size:11.5px">Al crear una cuenta aceptas nuestra <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--brand-2); font-weight:600">política de privacidad</a> y nuestros <a href="terms.html" target="_blank" rel="noopener" style="color:var(--brand-2); font-weight:600">términos de uso</a> — léelos, especialmente el aviso sobre planes generados por IA.</p>
     </div>` : `
     <div class="card">
       <h4>Vamos a configurarlo</h4>
@@ -1647,7 +1647,8 @@ function renderAjustes() {
 
     <div class="section-title">Legal</div>
     <div class="card">
-      <a href="privacy.html" target="_blank" rel="noopener" class="phase-summary" style="color:var(--brand-2); font-weight:600; text-decoration:none">📄 Política de privacidad</a>
+      <a href="privacy.html" target="_blank" rel="noopener" class="phase-summary" style="color:var(--brand-2); font-weight:600; text-decoration:none; display:block; margin-bottom:10px">📄 Política de privacidad</a>
+      <a href="terms.html" target="_blank" rel="noopener" class="phase-summary" style="color:var(--brand-2); font-weight:600; text-decoration:none; display:block">📋 Términos de uso</a>
     </div>
   `;
   $("#view").innerHTML = html;
