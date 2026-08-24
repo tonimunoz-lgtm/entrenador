@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Términos de uso · Forja21</title>
+<meta name="theme-color" content="#FF5A00" />
+<link rel="icon" href="icons/favicon-32.png?v=2" sizes="32x32" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand:#FF5A00; --brand-2:#D94800;
+    --bg:#F5F6F8; --surface:#FFFFFF; --border:#E7E9ED;
+    --text:#16181B; --text-muted:#5B6472;
+    --warn-bg:#FFF4E8; --warn-border:#F5C98A;
+    --font-display:"Outfit",-apple-system,sans-serif;
+    --font-body:"Inter",-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--font-body); line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:720px; margin:0 auto; padding:0 20px 80px; }
+  header{
+    background:linear-gradient(135deg,#FF7A2E, var(--brand) 55%, var(--brand-2));
+    color:#fff; padding:48px 20px 36px;
+  }
+  header .inner{ max-width:720px; margin:0 auto; }
+  .eyebrow{ font-size:12.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; opacity:0.9; }
+  h1{ font-family:var(--font-display); font-size:clamp(28px,5vw,38px); font-weight:800; margin:8px 0 6px; }
+  .updated{ font-size:13.5px; opacity:0.9; }
+  h2{
+    font-family:var(--font-display); font-size:19px; font-weight:700;
+    margin:40px 0 12px; padding-top:8px; scroll-margin-top:20px;
+  }
+  h2 .num{ color:var(--brand); margin-right:8px; }
+  p{ margin:0 0 14px; color:var(--text); font-size:15px; }
+  p.muted{ color:var(--text-muted); }
+  ul{ margin:0 0 14px; padding-left:20px; }
+  li{ margin-bottom:8px; font-size:15px; }
+  strong{ font-weight:650; }
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:18px 20px; margin:20px 0;
+  }
+  .warn{
+    background:var(--warn-bg); border:1px solid var(--warn-border); border-radius:16px;
+    padding:18px 20px; margin:20px 0;
+  }
+  .warn-title{ font-weight:700; font-size:14px; margin-bottom:6px; }
+  a{ color:var(--brand-2); font-weight:600; }
+  .toc{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 22px; margin:-28px 0 20px; }
+  .toc-title{ font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); margin-bottom:10px; }
+  .toc ol{ margin:0; padding-left:18px; columns:2; column-gap:24px; }
+  .toc li{ font-size:13.5px; margin-bottom:6px; break-inside:avoid; }
+  .toc a{ color:var(--text); }
+  footer{ margin-top:48px; padding-top:20px; border-top:1px solid var(--border); font-size:13px; color:var(--text-muted); }
+  @media (max-width:520px){ .toc ol{ columns:1; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div class="eyebrow">Forja21</div>
+    <h1>Términos de uso</h1>
+    <div class="updated">Última actualización: 24 de agosto de 2026</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="toc" style="margin-top:24px">
+    <div class="toc-title">Contenido</div>
+    <ol>
+      <li><a href="#naturaleza">Qué es Forja21</a></li>
+      <li><a href="#disponibilidad">Disponibilidad del servicio</a></li>
+      <li><a href="#ia">Contenido generado por IA — léelo con atención</a></li>
+      <li><a href="#salud">Aviso de salud, alergias e intolerancias</a></li>
+      <li><a href="#riesgo">Asunción de riesgo</a></li>
+      <li><a href="#responsabilidad">Límite de responsabilidad</a></li>
+      <li><a href="#cuenta">Tu cuenta y tu conducta</a></li>
+      <li><a href="#cambios">Cambios en el servicio y en estos términos</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ol>
+  </div>
+
+  <p>Al crear una cuenta o usar Forja21, aceptas estos términos. Léelos enteros — están escritos para que se entiendan sin necesitar un diccionario legal, pero cubren cosas importantes sobre lo que puedes y no puedes esperar de esta app.</p>
+
+  <h2 id="naturaleza"><span class="num">1.</span>Qué es Forja21</h2>
+  <p>Forja21 es un proyecto personal y gratuito, creado por Toni Muñoz para uso de amigos y conocidos. No es un producto comercial, no hay una empresa detrás, y no se cobra nada por usarlo.</p>
+  <p>Precisamente por ser gratuito, funciona sobre los niveles gratuitos de varios servicios externos (bases de datos, autenticación e inteligencia artificial). Estos niveles gratuitos tienen límites de uso pensados para un puñado de personas — no para cientos ni miles de usuarios.</p>
+
+  <h2 id="disponibilidad"><span class="num">2.</span>Disponibilidad del servicio</h2>
+  <div class="warn">
+    <div class="warn-title">⚠️ El servicio puede fallar, limitarse o desaparecer sin previo aviso</div>
+    <p style="margin-bottom:0">Si el número de usuarios crece más de lo previsto, es posible que: la app deje de funcionar correctamente o de forma intermitente, algunas funciones (como la generación de planes con IA) dejen de estar disponibles temporal o permanentemente, el servicio se cierre por completo, o se tenga que pasar a un modelo de pago si mantenerlo exige asumir costes económicos.</p>
+  </div>
+  <p>Forja21 se ofrece <strong>"tal cual" ("as is")</strong>, sin garantía de disponibilidad, continuidad ni ausencia de errores. No se ofrece ningún compromiso de nivel de servicio (SLA), copias de seguridad garantizadas más allá de lo que ya se explica en la <a href="privacy.html">política de privacidad</a>, ni soporte técnico garantizado.</p>
+  <p>No asumimos ninguna responsabilidad por la interrupción, degradación o cierre del servicio, ni por la pérdida de acceso a tus datos o a tu plan que pueda derivarse de ello.</p>
+
+  <h2 id="ia"><span class="num">3.</span>Contenido generado por IA — léelo con atención</h2>
+  <p>Tu plan de entrenamiento y nutrición <strong>lo genera una inteligencia artificial</strong>, no un entrenador ni un nutricionista humano. Como cualquier IA, puede equivocarse — a veces de forma obvia, a veces de forma sutil. Puede calcular mal una cantidad, recomendar un ejercicio poco adecuado para tu situación, pasar por alto una restricción que le indicaste, o directamente contradecirse entre una semana y otra.</p>
+  <p><strong>El contenido de esta app es orientativo, no es asesoramiento profesional, y no está validado científica ni médicamente para tu caso individual.</strong> No sustituye la valoración de un médico, fisioterapeuta, entrenador personal titulado o dietista-nutricionista colegiado.</p>
+
+  <h2 id="salud"><span class="num">4.</span>Aviso de salud, alergias e intolerancias</h2>
+  <p>Esto es especialmente importante si tienes <strong>alergias, intolerancias (por ejemplo, celiaquía), condiciones médicas, lesiones previas o cualquier otra circunstancia de salud relevante</strong>:</p>
+  <ul>
+    <li>La IA puede generar recomendaciones de alimentos o ejercicios que no sean adecuados para tu situación concreta, incluso si se lo has indicado en el cuestionario.</li>
+    <li><strong>Eres tú quien debe revisar cada recomendación</strong> (ingredientes, ejercicios, cargas) antes de seguirla, especialmente si tienes cualquier alergia, intolerancia o condición médica.</li>
+    <li>Si tienes dudas sobre si un alimento es seguro para ti (por ejemplo, si contiene gluten, frutos secos u otro alérgeno), <strong>verifícalo tú mismo en el etiquetado real del producto</strong> — no confíes ciegamente en lo que indique la app.</li>
+    <li>Consulta con un profesional sanitario antes de empezar cualquier plan de entrenamiento o cambio de alimentación, especialmente si tienes una condición médica preexistente, estás embarazada, o llevas tiempo sin actividad física.</li>
+  </ul>
+
+  <h2 id="riesgo"><span class="num">5.</span>Asunción de riesgo</h2>
+  <p>El ejercicio físico y los cambios de alimentación conllevan riesgos inherentes, incluso siguiendo un plan bien diseñado. Al usar Forja21, entiendes y aceptas que:</p>
+  <ul>
+    <li>Usas la app de forma <strong>voluntaria y bajo tu propia responsabilidad</strong>.</li>
+    <li>Eres tú quien decide, en última instancia, qué recomendaciones seguir y cuáles no.</li>
+    <li>Debes parar y consultar con un profesional ante cualquier dolor, malestar o señal de alarma durante el entrenamiento.</li>
+  </ul>
+
+  <h2 id="responsabilidad"><span class="num">6.</span>Límite de responsabilidad</h2>
+  <p>Dentro de lo que permite la ley, Toni Muñoz, como creador de Forja21, <strong>no asume responsabilidad por daños, lesiones, problemas de salud, reacciones alérgicas o cualquier otro perjuicio</strong> que puedas sufrir por seguir las recomendaciones generadas por la app, ni por la interrupción, error o cierre del servicio.</p>
+  <p class="muted">Esto no pretende excluir responsabilidad en los casos en que la ley no permite hacerlo (por ejemplo, negligencia grave o dolo) — solo delimitar, de forma honesta, que este es un proyecto personal gratuito, sin garantías profesionales, y que el uso del contenido generado por IA es bajo tu propio criterio y responsabilidad.</p>
+
+  <h2 id="cuenta"><span class="num">7.</span>Tu cuenta y tu conducta</h2>
+  <p>Eres responsable de mantener segura tu contraseña. Usa la app de forma razonable: no intentes sobrecargarla deliberadamente, ni uses una cuenta para fines distintos a tu propio entrenamiento personal.</p>
+
+  <h2 id="cambios"><span class="num">8.</span>Cambios en el servicio y en estos términos</h2>
+  <p>Podemos modificar, limitar o descontinuar Forja21 en cualquier momento, y podemos actualizar estos términos. Si lo hacemos de forma relevante, actualizaremos la fecha al principio de esta página.</p>
+
+  <h2 id="contacto"><span class="num">9.</span>Contacto</h2>
+  <p>Para cualquier duda sobre estos términos, escribe a <a href="mailto:desnvolupado@gmail.com">desnvolupado@gmail.com</a>.</p>
+
+  <footer>Forja21 — estos términos se aplican junto con la <a href="privacy.html">política de privacidad</a>.</footer>
+
+</div>
+</body>
+</html>
