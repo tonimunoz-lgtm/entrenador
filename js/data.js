@@ -13,7 +13,7 @@ let PROFILE_DEFAULTS = {
   fcm: 160,                         // frecuencia cardiaca máxima
   z2max: 126,
   notificationsEnabled: false,
-  theme: "classic"
+  theme: "combustion"
 };
 
 let HR_ZONES = [
