@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Eliminar cuenta y datos · Forja21</title>
+<meta name="theme-color" content="#FF5A00" />
+<link rel="icon" href="icons/favicon-32.png?v=2" sizes="32x32" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand:#FF5A00; --brand-2:#D94800;
+    --bg:#F5F6F8; --surface:#FFFFFF; --border:#E7E9ED;
+    --text:#16181B; --text-muted:#5B6472;
+    --font-display:"Outfit",-apple-system,sans-serif;
+    --font-body:"Inter",-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--font-body); line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:640px; margin:0 auto; padding:0 20px 80px; }
+  header{
+    background:linear-gradient(135deg,#FF7A2E, var(--brand) 55%, var(--brand-2));
+    color:#fff; padding:48px 20px 36px;
+  }
+  header .inner{ max-width:640px; margin:0 auto; }
+  .eyebrow{ font-size:12.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; opacity:0.9; }
+  h1{ font-family:var(--font-display); font-size:clamp(26px,5vw,34px); font-weight:800; margin:8px 0 6px; }
+  h2{ font-family:var(--font-display); font-size:18px; font-weight:700; margin:36px 0 12px; }
+  p{ margin:0 0 14px; font-size:15px; }
+  ol, ul{ margin:0 0 14px; padding-left:20px; }
+  li{ margin-bottom:8px; font-size:15px; }
+  strong{ font-weight:650; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px 22px; margin:20px 0; }
+  .steps{ counter-reset: step; list-style:none; padding-left:0; }
+  .steps li{ counter-increment: step; position:relative; padding-left:36px; margin-bottom:14px; }
+  .steps li::before{
+    content: counter(step); position:absolute; left:0; top:0;
+    width:24px; height:24px; border-radius:50%; background:var(--brand);
+    color:#fff; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center;
+  }
+  a{ color:var(--brand-2); font-weight:600; }
+  table{ width:100%; border-collapse:collapse; margin:14px 0; font-size:14px; }
+  th, td{ text-align:left; padding:8px 6px; border-bottom:1px solid var(--border); }
+  th{ color:var(--text-muted); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:0.03em; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div class="eyebrow">Forja21 · Toni Muñoz</div>
+    <h1>Eliminar tu cuenta y tus datos</h1>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <p style="margin-top:24px">Puedes eliminar por completo tu cuenta de Forja21 y todos los datos asociados en cualquier momento, directamente desde la app — no hace falta escribir a nadie ni esperar.</p>
+
+  <h2>Cómo solicitar la eliminación</h2>
+  <div class="card">
+    <ol class="steps">
+      <li>Abre Forja21 e inicia sesión con tu cuenta.</li>
+      <li>Ve a la pestaña <strong>Ajustes</strong> (abajo a la derecha).</li>
+      <li>Baja hasta la sección <strong>"Datos"</strong>.</li>
+      <li>Pulsa el botón <strong>"Borrar mi cuenta y todos mis datos"</strong>.</li>
+      <li>Confirma en el aviso que aparece. Se borra al instante.</li>
+    </ol>
+  </div>
+
+  <p>Si has perdido el acceso a tu cuenta y no puedes iniciar sesión, escribe a <a href="mailto:desnvolupado@gmail.com">desnvolupado@gmail.com</a> indicando el email de tu cuenta, y la eliminaremos manualmente en un plazo máximo de 7 días.</p>
+
+  <h2>Qué se elimina</h2>
+  <div class="card">
+    <table>
+      <tr><th>Dato</th><th>¿Se elimina?</th></tr>
+      <tr><td>Cuenta (email y contraseña)</td><td>Sí, inmediatamente</td></tr>
+      <tr><td>Nombre, edad, sexo, altura, peso</td><td>Sí, inmediatamente</td></tr>
+      <tr><td>Objetivo y respuestas del cuestionario</td><td>Sí, inmediatamente</td></tr>
+      <tr><td>Plan de entrenamiento y nutrición generado</td><td>Sí, inmediatamente</td></tr>
+      <tr><td>Historial de pesos registrados</td><td>Sí, inmediatamente</td></tr>
+      <tr><td>Historial de sesiones de entreno</td><td>Sí, inmediatamente</td></tr>
+      <tr><td>Registro de suplementos</td><td>Sí, inmediatamente</td></tr>
+    </table>
+    <p style="margin:0">No conservamos ninguno de estos datos tras la eliminación, ni siquiera de forma parcial o temporal — no hay periodo de retención adicional.</p>
+  </div>
+
+  <h2>Más información</h2>
+  <p>Para el detalle completo de qué datos recogemos y cómo los tratamos mientras tu cuenta está activa, consulta nuestra <a href="privacy.html">política de privacidad</a>.</p>
+
+</div>
+</body>
+</html>
