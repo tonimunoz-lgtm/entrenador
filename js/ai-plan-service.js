@@ -107,7 +107,9 @@
             type: "waiting",
             seconds,
             message:
-              `Límite gratuito de Groq: continuamos automáticamente en ${seconds} s…`
+              body?.error
+                ? `${body.error} (${seconds} s…)`
+                : `Límite gratuito de Groq: continuamos automáticamente en ${seconds} s…`
           }
         );
 
