@@ -10,12 +10,30 @@
   "background_color": "#F5F6F8",
   "theme_color": "#FF5A00",
   "lang": "es",
+  "dir": "ltr",
+  "display_override": ["standalone", "minimal-ui"],
   "categories": ["health", "fitness", "lifestyle"],
   "prefer_related_applications": false,
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/bienvenida.png",
+      "sizes": "535x489",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Bienvenida — crea tu cuenta y la IA te prepara tu plan"
+    },
+    {
+      "src": "screenshots/calendario.png",
+      "sizes": "529x760",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Calendario mensual con tu entreno y nutrición de cada día"
+    }
   ],
   "shortcuts": [
     {
