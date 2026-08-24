@@ -1,6 +1,13 @@
 /* FORJA21 — Mistral por etapas, objetivos semanales en bloques */
 
-const MODEL = "mistral-large-latest";
+// Plan maestro (una sola llamada, estratégica): Mistral Large, prioriza calidad.
+const MODEL_MASTER = "mistral-large-latest";
+// Objetivos semanales y semana detallada (llamadas repetitivas, mucho JSON de
+// relleno): Mistral Medium — en las medidas de Artificial Analysis de 2026
+// puntúa igual o mejor que Large en su índice de inteligencia y genera texto
+// unas 3 veces más rápido (~140 tok/s frente a ~45 tok/s), así que no se
+// pierde calidad y se gana bastante velocidad en las llamadas que más pesan.
+const MODEL_BULK = "mistral-medium-latest";
 const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
 
 const FIREBASE_WEB_API_KEY =
@@ -98,7 +105,7 @@ function extractJson(text) {
 }
 
 
-async function callModelOnce(prompt, maxTokens) {
+async function callModelOnce(prompt, maxTokens, model) {
 
   const r = await fetch(
     MISTRAL_API_URL,
@@ -113,7 +120,7 @@ async function callModelOnce(prompt, maxTokens) {
 
       body: JSON.stringify({
 
-        model: MODEL,
+        model,
 
         messages: [
           {
@@ -224,17 +231,14 @@ async function callModelOnce(prompt, maxTokens) {
 }
 
 
-async function callModel(prompt, maxTokens) {
+async function callModel(prompt, maxTokens, model) {
 
   // Mistral no es un modelo "razonador" como el gpt-oss-120b de Groq — si
   // devuelve un JSON incompleto no suele ser por quedarse sin presupuesto de
   // tokens pensando, así que reintentar en bucle con cada vez más tokens no
-  // arregla gran cosa y sí consume tiempo. Y el tiempo es lo que aquí escasea:
-  // la función en Vercel tiene un límite (60 s en el plan Hobby con
-  // maxDuration configurado). Tres intentos secuenciales de hasta 2x tokens
-  // cada uno pueden agotar ese límite sin que el cliente vea ni un error —
-  // se queda "colgado" hasta que Vercel mata la función. Un solo reintento,
-  // con un margen moderado, es más seguro.
+  // arregla gran cosa y sí consume tiempo, que en una función serverless es
+  // limitado. Un solo reintento, con un margen moderado, es más seguro que
+  // encadenar varios intentos cada vez más grandes y lentos.
   const attempts = [
     maxTokens,
     Math.round(maxTokens * 1.3)
@@ -246,7 +250,7 @@ async function callModel(prompt, maxTokens) {
 
     try {
 
-      return await callModelOnce(prompt, attempts[i]);
+      return await callModelOnce(prompt, attempts[i], model);
 
     } catch (err) {
 
@@ -1268,7 +1272,9 @@ module.exports =
                 user.email
               ),
 
-              2200
+              2200,
+
+              MODEL_MASTER
 
             )
 
@@ -1285,10 +1291,10 @@ module.exports =
             meta: {
 
               provider:
-                "groq",
+                "mistral",
 
               model:
-                MODEL,
+                MODEL_MASTER,
 
               generatedAt:
                 new Date()
@@ -1380,7 +1386,9 @@ module.exports =
               previousTargets
             ),
 
-            1600
+            1600,
+
+            MODEL_BULK
 
           );
 
@@ -1465,7 +1473,9 @@ module.exports =
               user.email
             ),
 
-            6000
+            6000,
+
+            MODEL_BULK
 
           );
 
