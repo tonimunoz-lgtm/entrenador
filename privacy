@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Política de privacidad · Forja21</title>
+<meta name="theme-color" content="#FF5A00" />
+<link rel="icon" href="icons/favicon-32.png?v=2" sizes="32x32" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand:#FF5A00; --brand-2:#D94800;
+    --bg:#F5F6F8; --surface:#FFFFFF; --border:#E7E9ED;
+    --text:#16181B; --text-muted:#5B6472;
+    --font-display:"Outfit",-apple-system,sans-serif;
+    --font-body:"Inter",-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--font-body); line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:720px; margin:0 auto; padding:0 20px 80px; }
+  header{
+    background:linear-gradient(135deg,#FF7A2E, var(--brand) 55%, var(--brand-2));
+    color:#fff; padding:48px 20px 36px;
+  }
+  header .inner{ max-width:720px; margin:0 auto; }
+  .eyebrow{ font-size:12.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; opacity:0.9; }
+  h1{ font-family:var(--font-display); font-size:clamp(28px,5vw,38px); font-weight:800; margin:8px 0 6px; }
+  .updated{ font-size:13.5px; opacity:0.9; }
+  h2{
+    font-family:var(--font-display); font-size:19px; font-weight:700;
+    margin:40px 0 12px; padding-top:8px; scroll-margin-top:20px;
+  }
+  h2 .num{ color:var(--brand); margin-right:8px; }
+  p{ margin:0 0 14px; color:var(--text); font-size:15px; }
+  p.muted, li.muted{ color:var(--text-muted); }
+  ul{ margin:0 0 14px; padding-left:20px; }
+  li{ margin-bottom:8px; font-size:15px; }
+  strong{ font-weight:650; }
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:18px 20px; margin:20px 0;
+  }
+  a{ color:var(--brand-2); font-weight:600; }
+  .toc{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 22px; margin:-28px 0 20px; }
+  .toc-title{ font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); margin-bottom:10px; }
+  .toc ol{ margin:0; padding-left:18px; columns:2; column-gap:24px; }
+  .toc li{ font-size:13.5px; margin-bottom:6px; break-inside:avoid; }
+  .toc a{ color:var(--text); }
+  footer{ margin-top:48px; padding-top:20px; border-top:1px solid var(--border); font-size:13px; color:var(--text-muted); }
+  @media (max-width:520px){ .toc ol{ columns:1; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div class="eyebrow">Forja21</div>
+    <h1>Política de privacidad</h1>
+    <div class="updated">Última actualización: 24 de agosto de 2026</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="toc" style="margin-top:24px">
+    <div class="toc-title">Contenido</div>
+    <ol>
+      <li><a href="#responsable">Quién trata tus datos</a></li>
+      <li><a href="#datos">Qué datos recogemos</a></li>
+      <li><a href="#uso">Para qué los usamos</a></li>
+      <li><a href="#terceros">Con quién los compartimos</a></li>
+      <li><a href="#ia">El papel de la IA en tu plan</a></li>
+      <li><a href="#conservacion">Cuánto tiempo los guardamos</a></li>
+      <li><a href="#derechos">Tus derechos</a></li>
+      <li><a href="#seguridad">Seguridad</a></li>
+      <li><a href="#menores">Menores de edad</a></li>
+      <li><a href="#cookies">Cookies y almacenamiento local</a></li>
+      <li><a href="#cambios">Cambios en esta política</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ol>
+  </div>
+
+  <p>Forja21 es una aplicación de entrenamiento y nutrición que genera planes personalizados a partir de tus objetivos. Esta página explica qué datos recogemos, para qué los usamos y qué opciones tienes. La hemos escrito intentando evitar la jerga legal innecesaria — si algo no queda claro, escríbenos (ver <a href="#contacto">Contacto</a>).</p>
+
+  <h2 id="responsable"><span class="num">1.</span>Quién trata tus datos</h2>
+  <p>El responsable del tratamiento de tus datos es:</p>
+  <div class="card">
+    <strong>Toni Muñoz</strong><br />
+    Contacto: <a href="mailto:desnvolupado@gmail.com">desnvolupado@gmail.com</a><br />
+    [Ciudad, país — opcional]
+  </div>
+
+  <h2 id="datos"><span class="num">2.</span>Qué datos recogemos</h2>
+  <p>Recogemos únicamente los datos necesarios para crear y mantener tu plan:</p>
+  <ul>
+    <li><strong>Datos de cuenta:</strong> email y contraseña, gestionados por Firebase Authentication (Google). No vemos ni almacenamos tu contraseña en texto plano — la gestiona directamente Firebase.</li>
+    <li><strong>Datos de perfil:</strong> nombre, edad, sexo, altura y peso.</li>
+    <li><strong>Objetivos y cuestionario inicial:</strong> tu objetivo (carrera, pérdida de grasa, ganancia muscular, fuerza, forma física, movilidad…), nivel de experiencia, disponibilidad semanal, historial deportivo y cualquier detalle que añadas sobre lesiones o limitaciones, si lo indicas.</li>
+    <li><strong>Datos de progreso:</strong> peso registrado semana a semana, sesiones de entreno (distancia, tiempo, ritmo, frecuencia cardíaca si la introduces), y registro de suplementos.</li>
+    <li><strong>Datos técnicos básicos:</strong> los que genera el propio uso de la app (por ejemplo, marcas de tiempo de tus sesiones). No usamos rastreadores de terceros ni analítica publicitaria.</li>
+  </ul>
+  <p class="muted">No recogemos datos de ubicación GPS, contactos, cámara ni micrófono. No recogemos datos de pago — la app no vende nada dentro de ella.</p>
+
+  <h2 id="uso"><span class="num">3.</span>Para qué los usamos</h2>
+  <ul>
+    <li>Generar tu plan de entrenamiento y nutrición personalizado.</li>
+    <li>Adaptar ese plan semana a semana según tu progreso real (peso, entrenos registrados).</li>
+    <li>Sincronizar tus datos entre dispositivos si inicias sesión en más de uno.</li>
+    <li>Mostrarte tus propias estadísticas y progreso dentro de la app.</li>
+  </ul>
+  <p><strong>No usamos tus datos para publicidad.</strong> Forja21 no muestra anuncios ni vende, alquila o cede tus datos a terceros con fines comerciales o publicitarios.</p>
+
+  <h2 id="terceros"><span class="num">4.</span>Con quién los compartimos</h2>
+  <p>Usamos un número reducido de proveedores estrictamente para poder ofrecer el servicio (encargados del tratamiento, nunca compradores de tus datos):</p>
+  <ul>
+    <li><strong>Google Firebase</strong> (Authentication y Firestore) — aloja tu cuenta y tus datos de progreso de forma segura.</li>
+    <li><strong>Mistral AI</strong> — recibe los datos de tu perfil y cuestionario (edad, sexo, altura, peso, objetivos, nivel, disponibilidad) únicamente para generar y ajustar tu plan. Ver más detalles en la sección siguiente.</li>
+    <li><strong>Vercel</strong> — aloja la propia aplicación web.</li>
+  </ul>
+
+  <h2 id="ia"><span class="num">5.</span>El papel de la IA en tu plan</h2>
+  <p>Tu plan de entrenamiento y nutrición se genera con ayuda de un modelo de lenguaje de <strong>Mistral AI</strong>, al que enviamos los datos de tu perfil y cuestionario a través de su API. Según la documentación pública de Mistral AI vigente en la fecha de esta política:</p>
+  <ul>
+    <li>Los datos enviados a través de su API <strong>no se usan para entrenar sus modelos</strong>.</li>
+    <li>Mistral retiene esas peticiones durante un máximo de <strong>30 días</strong> con el único fin de detectar abusos del servicio, y las elimina automáticamente después.</li>
+  </ul>
+  <p class="muted">Te recomendamos consultar directamente la <a href="https://mistral.ai/terms" target="_blank" rel="noopener">política de privacidad de Mistral AI</a> para el detalle completo y actualizado, ya que puede cambiar con el tiempo.</p>
+
+  <h2 id="conservacion"><span class="num">6.</span>Cuánto tiempo los guardamos</h2>
+  <p>Guardamos tus datos mientras tu cuenta esté activa. Si eliminas tu cuenta o nos pides que borremos tus datos, los eliminamos de nuestros sistemas (Firebase) en un plazo razonable, salvo que la ley nos obligue a conservar algo durante más tiempo.</p>
+
+  <h2 id="derechos"><span class="num">7.</span>Tus derechos</h2>
+  <p>Puedes pedirnos en cualquier momento:</p>
+  <ul>
+    <li><strong>Acceso</strong> a los datos que tenemos sobre ti.</li>
+    <li><strong>Rectificación</strong> de datos incorrectos.</li>
+    <li><strong>Eliminación</strong> de tu cuenta y de todos tus datos.</li>
+    <li><strong>Portabilidad</strong>: te podemos facilitar una copia de tus datos en un formato reutilizable.</li>
+  </ul>
+  <p>Para ejercer cualquiera de estos derechos, escríbenos a la dirección de contacto indicada más abajo.</p>
+
+  <h2 id="seguridad"><span class="num">8.</span>Seguridad</h2>
+  <p>Los datos viajan siempre cifrados (HTTPS/TLS). El acceso a tu cuenta está protegido por Firebase Authentication, y tus datos en Firestore solo son accesibles desde tu propia cuenta autenticada.</p>
+
+  <h2 id="menores"><span class="num">9.</span>Menores de edad</h2>
+  <p>Forja21 no está dirigida a menores de 16 años y no recogemos conscientemente datos de menores de esa edad. Si crees que un menor nos ha facilitado datos, contáctanos para eliminarlos.</p>
+
+  <h2 id="cookies"><span class="num">10.</span>Cookies y almacenamiento local</h2>
+  <p>Forja21 usa almacenamiento local del navegador (localStorage) para mantener tu sesión y una copia de tus datos disponible sin conexión, y una cookie técnica de sesión gestionada por Firebase Authentication. No usamos cookies de publicidad ni de seguimiento de terceros.</p>
+
+  <h2 id="cambios"><span class="num">11.</span>Cambios en esta política</h2>
+  <p>Si actualizamos esta política de forma relevante, lo indicaremos cambiando la fecha de "última actualización" al principio de esta página.</p>
+
+  <h2 id="contacto"><span class="num">12.</span>Contacto</h2>
+  <p>Para cualquier duda sobre esta política o sobre tus datos, escríbenos a <a href="mailto:desnvolupado@gmail.com">desnvolupado@gmail.com</a>.</p>
+
+  <footer>Forja21 — esta política de privacidad se aplica a la aplicación web y a su versión publicada en Google Play.</footer>
+
+</div>
+</body>
+</html>
