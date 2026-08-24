@@ -226,10 +226,18 @@ async function callModelOnce(prompt, maxTokens) {
 
 async function callModel(prompt, maxTokens) {
 
+  // Mistral no es un modelo "razonador" como el gpt-oss-120b de Groq — si
+  // devuelve un JSON incompleto no suele ser por quedarse sin presupuesto de
+  // tokens pensando, así que reintentar en bucle con cada vez más tokens no
+  // arregla gran cosa y sí consume tiempo. Y el tiempo es lo que aquí escasea:
+  // la función en Vercel tiene un límite (60 s en el plan Hobby con
+  // maxDuration configurado). Tres intentos secuenciales de hasta 2x tokens
+  // cada uno pueden agotar ese límite sin que el cliente vea ni un error —
+  // se queda "colgado" hasta que Vercel mata la función. Un solo reintento,
+  // con un margen moderado, es más seguro.
   const attempts = [
     maxTokens,
-    Math.round(maxTokens * 1.5),
-    Math.round(maxTokens * 2)
+    Math.round(maxTokens * 1.3)
   ];
 
   let lastErr = null;
