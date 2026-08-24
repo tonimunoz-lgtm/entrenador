@@ -47,7 +47,6 @@ function isPersonalizedMode() {
 const THEMES = [
   { id: "classic", name: "Clásico", desc: "El diseño actual de Forja21.", swatch: ["#3E7BFA", "#63E6D4", "#171D22"] },
   { id: "trackside", name: "Trackside", desc: "Energía de pista — negro y verde lima. Inspirado en Nike Training Club.", swatch: ["#D6FF3F", "#0A0A0A", "#141414"] },
-  { id: "aura", name: "Aura", desc: "Calma premium con gradientes suaves. Inspirado en Whoop / Oura.", swatch: ["#31D6C4", "#A98CFF", "#0B0E17"] },
   { id: "ledger", name: "Ledger", desc: "Modo claro, rápido y sin distracciones. Inspirado en Hevy / Strong.", swatch: ["#0F6B4C", "#FAFAF8", "#15181B"] },
   { id: "combustion", name: "Combustión", desc: "Naranja y blanco, alta energía. Inspirado en RunTrack.", swatch: ["#FF5A00", "#FFFFFF", "#16181B"] }
 ];
@@ -565,17 +564,34 @@ function logWorkout(entry) {
 }
 function workoutsForDate(dk) { return state.workouts.filter(w => w.date === dk); }
 
+// Un día "tiene carrera" si su entreno incluye realmente un tramo de correr/cinta
+// (cardio, bloques de ritmo, tirada por semanas o distancia de hoy) o si su tipo es
+// intrínsecamente de carrera (calidad, tirada larga, día de carrera). Un gimnasio
+// puro (solo `exercises`, sin nada de lo anterior) no tiene componente de carrera.
+function dayHasRunningComponent(day) {
+  if (!day) return false;
+  if (["quality", "long", "race"].includes(day.type)) return true;
+  const t = day.training;
+  if (t && (t.cardio || t.blocks || t.byWeek || t.todayDistance)) return true;
+  return false;
+}
+
 function openWorkoutForm(day, dateObj) {
   const dk = dateKey(dateObj);
   const targetPace = day.training?.targetPace || "";
+  const hasRunning = dayHasRunningComponent(day);
+  const fieldsHTML = hasRunning
+    ? `<div class="log-field"><label>Distancia (km)</label><input inputmode="decimal" name="distance" placeholder="12.0" /></div>
+       <div class="log-field"><label>Tiempo (hh:mm:ss)</label><input name="time" placeholder="1:02:30" /></div>
+       <div class="log-field"><label>Ritmo medio (min/km)</label><input name="pace" placeholder="${targetPace || "4:55"}" /></div>
+       <div class="log-field"><label>FC media (ppm)</label><input inputmode="numeric" name="hr" placeholder="122" /></div>`
+    : `<div class="log-field"><label>Duración (hh:mm:ss)</label><input name="time" placeholder="0:45:00" /></div>
+       <div class="log-field"><label>FC media (ppm)</label><input inputmode="numeric" name="hr" placeholder="122" /></div>`;
   openModal(
-    `<div class="modal-title">Registrar sesión</div><div class="modal-desc">${day.label} · ${fmtDateShort(dateObj)} · ${day.typeLabel}${targetPace ? ` · 🎯 ${targetPace} min/km` : ""}</div>`,
+    `<div class="modal-title">Registrar sesión</div><div class="modal-desc">${day.label} · ${fmtDateShort(dateObj)} · ${day.typeLabel}${hasRunning && targetPace ? ` · 🎯 ${targetPace} min/km` : ""}</div>`,
     `<form id="workoutForm">
       <div class="log-grid">
-        <div class="log-field"><label>Distancia (km)</label><input inputmode="decimal" name="distance" placeholder="12.0" /></div>
-        <div class="log-field"><label>Tiempo (hh:mm:ss)</label><input name="time" placeholder="1:02:30" /></div>
-        <div class="log-field"><label>Ritmo medio (min/km)</label><input name="pace" placeholder="${targetPace || "4:55"}" /></div>
-        <div class="log-field"><label>FC media (ppm)</label><input inputmode="numeric" name="hr" placeholder="122" /></div>
+        ${fieldsHTML}
       </div>
       <div class="field" style="margin-top:6px"><label>Notas</label><input name="notes" placeholder="Sensaciones, dolores, clima…" /></div>
       <div class="btn-row" style="margin-top:6px">
@@ -1500,7 +1516,12 @@ function renderAjustes() {
       </div>
       <button class="btn btn-primary" id="saveZones" style="margin-top:12px">Guardar zonas</button>
       <div class="divider"></div>
-      <p class="phase-summary">FC reposo ${s.fcr} ppm · FC máxima ${s.fcm} ppm</p>
+      <p class="phase-summary" style="margin-bottom:8px">FC reposo y FC máxima — a partir de estos dos datos se pueden recalcular las 5 zonas con el <b>método de Karvonen (% de FC de reserva)</b>, el mismo criterio que usa el ACSM para definir zonas de entrenamiento.</p>
+      <div class="log-grid">
+        <div class="log-field"><label>FC reposo (ppm)</label><input type="number" inputmode="numeric" id="setFcr" value="${s.fcr}" /></div>
+        <div class="log-field"><label>FC máxima (ppm)</label><input type="number" inputmode="numeric" id="setFcm" value="${s.fcm}" /></div>
+      </div>
+      <button class="btn btn-ghost" id="recalcZones" style="margin-top:10px">Recalcular zonas con estos datos</button>
     </div>` : ""}
 
     <div class="section-title">Suplementación de referencia</div>
@@ -1620,6 +1641,24 @@ function renderAjustes() {
     }
     saveZones(zones);
     showToast("Zonas guardadas");
+    render();
+  });
+
+  $("#recalcZones")?.addEventListener("click", () => {
+    const fcr = parseInt($("#setFcr").value, 10);
+    const fcm = parseInt($("#setFcm").value, 10);
+    if (!Number.isFinite(fcr) || !Number.isFinite(fcm) || fcr < 30 || fcr > 110 || fcm < 100 || fcm > 230 || fcm <= fcr) {
+      showToast("Revisa esos valores de FC — algo no cuadra");
+      return;
+    }
+    const zones = computeHRZonesKarvonen(fcr, fcm);
+    if (!zones) { showToast("No se han podido calcular las zonas"); return; }
+    state.settings.fcr = fcr;
+    state.settings.fcm = fcm;
+    saveZones(zones);
+    storeSet(STORE_KEYS.settings, state.settings);
+    cloudPush(() => CloudSync.pushSettings(CloudSync.user.uid, state.settings));
+    showToast("Zonas recalculadas con el método de Karvonen (60/70/80/90% FC reserva)");
     render();
   });
 
@@ -1847,6 +1886,11 @@ async function renderPersonalizedSetupStart(user) {
 
 /* ---------------- Init ---------------- */
 function boot() {
+  // El tema "Aura" se ha retirado — si algún usuario lo tenía guardado, migramos a "classic".
+  if (state.settings.theme === "aura") {
+    state.settings.theme = "classic";
+    storeSet(STORE_KEYS.settings, state.settings);
+  }
   applyTheme(state.settings.theme || "classic");
   if (isStandalone()) $("#installBtn").hidden = true;
 
