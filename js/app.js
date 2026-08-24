@@ -32,6 +32,15 @@ const state = {
   calendarCursor: new Date()  // mes que se está mirando en la vista de calendario
 };
 
+// Soporte para los accesos directos del manifest (mantener pulsado el icono de la
+// app → "Hoy" / "Calendario"): abren ./index.html?tab=hoy etc. Si el parámetro
+// coincide con una pestaña real, arrancamos directamente ahí.
+(function applyTabFromURL() {
+  const validTabs = ["hoy", "calendario", "fases", "peso", "ajustes"];
+  const tab = new URLSearchParams(location.search).get("tab");
+  if (tab && validTabs.includes(tab)) state.activeTab = tab;
+})();
+
 // Empuja un cambio local a Firestore si hay sesión iniciada — silencioso si no.
 // Firestore ya encola los cambios cuando no hay conexión y los sincroniza solo.
 function cloudPush(fn) {
