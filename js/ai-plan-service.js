@@ -1,7 +1,7 @@
 /* ==========================================================================
-   FORJA21 — Generación Groq + objetivos semanales locales
+   FORJA21 — Generación Mistral + objetivos semanales locales
 
-   Groq:
+   Mistral:
    1. Diseña el plan maestro y sus fases.
    2. Genera las semanas detalladas.
 
@@ -109,7 +109,7 @@
             message:
               body?.error
                 ? `${body.error} (${seconds} s…)`
-                : `Límite gratuito de Groq: continuamos automáticamente en ${seconds} s…`
+                : `Límite gratuito de Mistral: continuamos automáticamente en ${seconds} s…`
           }
         );
 
@@ -133,7 +133,7 @@
 
 
     throw new Error(
-      "Groq sigue limitado temporalmente. El progreso guardado no se pierde."
+      "Mistral sigue limitado temporalmente. El progreso guardado no se pierde."
     );
 
   }
@@ -407,7 +407,7 @@
        * Si el texto de la fase menciona descarga/recovery o es cada 4ª
        * semana, reducimos ligeramente el objetivo de kilometraje.
        *
-       * No es el entrenamiento: sirve como referencia para Groq.
+       * No es el entrenamiento: sirve como referencia para Mistral.
        */
       const phaseText =
         [
