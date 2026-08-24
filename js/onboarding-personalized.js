@@ -420,6 +420,7 @@
         </div>
         ${phases.length ? `<div class="po-generated-phases">${phases.map(x=>`<div><b>${esc(x.name)}</b><small>Semanas ${x.weekFrom}–${x.weekTo}</small><p>${esc(x.summary)}</p></div>`).join("")}</div>` : ""}
         <p class="po-help" style="margin-top:12px">${complete ? "El plan maestro y el primer bloque ya están guardados en tu cuenta." : "Lo que ya se ha generado está guardado. Puedes continuar sin perder el progreso."}</p>
+        <p class="po-help" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border)">⚠️ Este plan lo genera una IA y puede equivocarse — es orientativo, no sustituye a un profesional. Revísalo tú mismo, sobre todo si tienes alergias, intolerancias o alguna condición médica. Más info en los <a href="terms.html" target="_blank" rel="noopener">términos de uso</a>.</p>
       </div>`;
   }
 
