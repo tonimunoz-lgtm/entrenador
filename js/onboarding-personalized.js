@@ -517,7 +517,16 @@
       try {
         const plan=await AIPlanService.generate(ctx.user,ctx.data,updateProgress);
         if(typeof showToast==="function") showToast("Plan creado y guardado");
-        await renderCompleted();
+        // En vez de volver a pintar esta misma pantalla de resumen (que se quedaba
+        // aquí hasta que el usuario recargaba la página a mano), activamos el plan
+        // y saltamos directamente a la app principal — es el mismo paso que hace
+        // boot() al recargar, solo que ahora ocurre en el momento en que el plan
+        // termina de generarse.
+        if (plan?.generation?.status === "ready" && typeof renderPersonalizedSetupStart === "function") {
+          await renderPersonalizedSetupStart(ctx.user);
+        } else {
+          await renderCompleted();
+        }
       } catch(e) {
         console.error(e);
         btn.disabled=false;
