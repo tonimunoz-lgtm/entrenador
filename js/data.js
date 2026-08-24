@@ -24,6 +24,38 @@ let HR_ZONES = [
   { key: "z5", label: "Z5 · Máximo", color: "#EF4444", range: ">148 ppm", min: 148, max: null }
 ];
 
+/* ---------------------------------------------------------------------
+   Cálculo científico de zonas de FC — Método de Karvonen (Frecuencia
+   Cardíaca de Reserva / %HRR): THR = FCreposo + %intensidad × (FCmáx − FCreposo).
+   Referencia: Karvonen MJ, Kentala E, Mustala O. "The effects of training
+   on heart rate; a longitudinal study." Ann Med Exp Biol Fenn. 1957.
+   Es el método usado habitualmente por el ACSM para definir zonas de
+   entrenamiento en 5 bandas (50/60/70/80/90% de la FC de reserva), y es
+   más preciso que usar % de la FC máxima porque tiene en cuenta la FC en
+   reposo real de cada persona.
+   Los cortes actuales del plan (115/126/137/148 ppm con FCreposo 46 y
+   FCmáx 160) ya siguen exactamente este esquema al 60/70/80/90% HRR.
+   --------------------------------------------------------------------- */
+function karvonenTarget(fcr, fcm, pct) {
+  return Math.round(fcr + (pct / 100) * (fcm - fcr));
+}
+function computeHRZonesKarvonen(fcr, fcm) {
+  fcr = Number(fcr);
+  fcm = Number(fcm);
+  if (!Number.isFinite(fcr) || !Number.isFinite(fcm) || fcm <= fcr) return null;
+  const b60 = karvonenTarget(fcr, fcm, 60);
+  const b70 = karvonenTarget(fcr, fcm, 70);
+  const b80 = karvonenTarget(fcr, fcm, 80);
+  const b90 = karvonenTarget(fcr, fcm, 90);
+  return [
+    { key: "z1", label: "Z1 · Muy suave", color: "#6B7784", min: null, max: b60, range: `<${b60} ppm` },
+    { key: "z2", label: "Z2 · Aeróbico (base)", color: "#3E7BFA", min: b60, max: b70, range: `${b60}–${b70} ppm` },
+    { key: "z3", label: "Z3 · Tempo", color: "#22C55E", min: b70 + 1, max: b80, range: `${b70 + 1}–${b80} ppm` },
+    { key: "z4", label: "Z4 · Umbral", color: "#F5B400", min: b80 + 1, max: b90, range: `${b80 + 1}–${b90} ppm` },
+    { key: "z5", label: "Z5 · Máximo", color: "#EF4444", min: b90, max: null, range: `>${b90} ppm` }
+  ];
+}
+
 // Hitos fijos del calendario real (no dependen de la semana calculada, son fechas de verdad)
 let MILESTONES = [
   { date: "2027-01-24", icon: "🏁", label: "Mitja Marató de Granollers", desc: "Objetivo: sub 1h 43min a 4:45–4:50 min/km, pesando 75.5 kg." },
@@ -852,12 +884,22 @@ function getDaySchedule(weekNumber, dayKey) {
   day.weekNumber = weekNumber;
   day.phase = phase;
 
-  if (phase.key === "fase2" && WEEKLY_SCHEDULE_PHASE2_OVERRIDES[dayKey]) {
-    const ov = WEEKLY_SCHEDULE_PHASE2_OVERRIDES[dayKey];
-    day = { ...day, ...ov, training: { ...day.training, ...ov.training } };
-    // Menús ciclados de fase 2
-    if (["tue", "fri", "sat"].includes(dayKey)) day.meals = MEALS_PHASE2_LOAD;
-    if (["mon", "wed", "sun"].includes(dayKey)) day.meals = MEALS_PHASE2_LOW;
+  if (phase.key === "fase2") {
+    // Los cambios de entrenamiento (martes, jueves, viernes, sábado) son independientes
+    // del ciclado de hidratos, que aplica a TODOS los días de la semana.
+    if (WEEKLY_SCHEDULE_PHASE2_OVERRIDES[dayKey]) {
+      const ov = WEEKLY_SCHEDULE_PHASE2_OVERRIDES[dayKey];
+      day = { ...day, ...ov, training: { ...day.training, ...ov.training } };
+    }
+    // Menús ciclados de fase 2: se conserva el menú real completo (desayuno, comida,
+    // merienda y cena) y el aviso de carga/recorte se añade como un ítem más, nunca
+    // sustituyendo el menú entero.
+    if (["tue", "fri", "sat"].includes(dayKey) && day.meals) {
+      day.meals = { ...day.meals, items: [...day.meals.items, ...MEALS_PHASE2_LOAD.items.map(it => ({ meal: `⚡ ${MEALS_PHASE2_LOAD.label}`, text: it.text }))] };
+    }
+    if (["mon", "wed", "sun"].includes(dayKey) && day.meals) {
+      day.meals = { ...day.meals, items: [...day.meals.items, ...MEALS_PHASE2_LOW.items.map(it => ({ meal: `🥗 ${MEALS_PHASE2_LOW.label}`, text: it.text }))] };
+    }
   }
 
   if (day.training && day.training.byWeek) {
