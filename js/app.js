@@ -1645,8 +1645,8 @@ function renderAjustes() {
 
     <div class="section-title">Datos</div>
     <div class="card">
-      <p class="phase-summary" style="margin-bottom:12px">Todos tus datos (peso, sesiones, checklist) se guardan solo en este dispositivo.</p>
-      <button class="btn btn-danger" id="resetData">Borrar todos mis datos</button>
+      <p class="phase-summary" style="margin-bottom:12px">${cloudUser ? "Tus datos se guardan en este dispositivo y en tu cuenta en la nube." : "Todos tus datos (peso, sesiones, checklist) se guardan solo en este dispositivo."}</p>
+      <button class="btn btn-danger" id="resetData">${cloudUser ? "Borrar mi cuenta y todos mis datos" : "Borrar todos mis datos"}</button>
     </div>
 
     <div class="section-title">Legal</div>
@@ -1740,13 +1740,23 @@ function renderAjustes() {
 
   $("#resetData").addEventListener("click", () => {
     confirmModal(
-      "¿Borrar todos tus datos?",
+      cloudUser ? "¿Borrar tu cuenta y todos tus datos?" : "¿Borrar todos tus datos?",
       cloudUser
-        ? "Se borrarán tus pesos, sesiones, checklist y el perfil guardado, tanto en este dispositivo como en la nube. Esta acción no se puede deshacer."
+        ? "Se borrará tu cuenta (email y contraseña), y tus pesos, sesiones, checklist y perfil, tanto en este dispositivo como en la nube. Esta acción no se puede deshacer."
         : "Se borrarán tus pesos, sesiones, checklist y el perfil guardado. Esta acción no se puede deshacer.",
       "Sí, borrar todo",
       async () => {
-        if (cloudUser) { try { await CloudSync.deleteAllCloudData(cloudUser.uid); } catch (e) {} }
+        if (cloudUser) {
+          try {
+            await CloudSync.deleteAccount(cloudUser.uid);
+          } catch (e) {
+            if (e?.code === "auth/requires-recent-login") {
+              showToast("Por seguridad, cierra sesión, vuelve a entrar y prueba de nuevo para borrar la cuenta");
+              return;
+            }
+            // Si falla el borrado de la cuenta en sí, al menos ya se borraron los datos (deleteAccount los borra primero).
+          }
+        }
         Object.values(STORE_KEYS).forEach(k => localStorage.removeItem(k));
         state.weights = []; state.workouts = []; state.supps = {};
         state.settings = { ...PROFILE_DEFAULTS, onboarded: false };
