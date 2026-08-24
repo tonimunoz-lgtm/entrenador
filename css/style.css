@@ -81,49 +81,6 @@
 [data-theme="trackside"] .daytype-pill{ border-radius: 3px; text-transform:uppercase; letter-spacing:0.4px; }
 [data-theme="trackside"] .route-seg{ border-radius:0; }
 
-/* ---------------- Aura (Whoop / Oura) ---------------- */
-[data-theme="aura"]{
-  --bg: #0B0E17;
-  --surface: #131829;
-  --surface-2: #161C31;
-  --surface-3: #1B2238;
-  --border: rgba(255,255,255,0.09);
-  --text: #EDEFF5;
-  --text-muted: #8891A8;
-  --text-faint: #5C6580;
-
-  --brand: #31D6C4;
-  --brand-2: #A98CFF;
-
-  --radius-lg: 26px;
-  --radius-md: 20px;
-  --radius-sm: 14px;
-
-  --font-display: "Space Grotesk", -apple-system, sans-serif;
-  --font-body: "Manrope", -apple-system, "Helvetica Neue", sans-serif;
-  --font-mono: "Space Grotesk", -apple-system, sans-serif;
-
-  --overlay-bg: rgba(11,14,23,0.75);
-  --nav-bg: rgba(19,24,41,0.8);
-  --bg-glow: #1c1533;
-  --hero-glow: rgba(169,140,255,0.22);
-  --display-transform: none;
-}
-[data-theme="aura"] body{
-  background:
-    radial-gradient(60% 40% at 20% 0%, rgba(169,140,255,0.14), transparent 60%),
-    radial-gradient(50% 35% at 90% 8%, rgba(49,214,196,0.12), transparent 60%),
-    var(--bg);
-}
-[data-theme="aura"] .card, [data-theme="aura"] .hero, [data-theme="aura"] .modal-sheet, [data-theme="aura"] .week-day, [data-theme="aura"] .month-cell{
-  background: rgba(255,255,255,0.045);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-}
-[data-theme="aura"] .topbar, [data-theme="aura"] .bottomnav{ backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
-[data-theme="aura"] .btn-primary{ background: linear-gradient(90deg, var(--brand), var(--brand-2)); }
-[data-theme="aura"] .stat-tile, [data-theme="aura"] .stat-chip{ border-radius: var(--radius-md); }
-
 /* ---------------- Ledger (Hevy / Strong) — modo claro ---------------- */
 [data-theme="ledger"]{
   --bg: #FAFAF8;
@@ -204,6 +161,13 @@
 [data-theme="combustion"] .exercise-set, [data-theme="combustion"] .distance-num, [data-theme="combustion"] .gauge-value, [data-theme="combustion"] .stat-tile-val{ color: var(--brand-2); }
 [data-theme="combustion"] .badge{ background: var(--surface-2); color: var(--brand-2); font-weight:700; }
 [data-theme="combustion"] .bottomnav, [data-theme="combustion"] .topbar{ box-shadow: 0 -1px 0 var(--border) inset; }
+/* El .hero de este tema es un degradado naranja — los stat-tile heredaban el mismo
+   color naranja oscuro (--brand-2) que usan sobre fondo blanco en el resto de la app,
+   lo que los dejaba casi ilegibles aquí encima. Se sobreescriben a blanco solo dentro del hero. */
+[data-theme="combustion"] .hero .stat-tile{ background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.3); }
+[data-theme="combustion"] .hero .stat-tile-val{ color: #fff; }
+[data-theme="combustion"] .hero .stat-tile-label{ color: rgba(255,255,255,0.85); }
+[data-theme="combustion"] .hero .badge{ background: rgba(255,255,255,0.85); color: var(--brand-2); }
 
 *{ box-sizing: border-box; }
 html,body{ height:100%; }
