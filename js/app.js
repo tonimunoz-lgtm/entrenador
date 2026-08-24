@@ -653,6 +653,7 @@ function renderOnboarding() {
         <button class="btn btn-primary" id="obSignUpBtn">Crear cuenta y empezar mi plan</button>
         <button class="btn btn-ghost" id="obSignInBtn">Ya tengo cuenta · Iniciar sesión</button>
       </div>
+      <p class="phase-summary" style="margin-top:12px; font-size:11.5px">Al crear una cuenta aceptas nuestra <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--brand-2); font-weight:600">política de privacidad</a>.</p>
     </div>` : `
     <div class="card">
       <h4>Vamos a configurarlo</h4>
@@ -1642,6 +1643,11 @@ function renderAjustes() {
     <div class="card">
       <p class="phase-summary" style="margin-bottom:12px">Todos tus datos (peso, sesiones, checklist) se guardan solo en este dispositivo.</p>
       <button class="btn btn-danger" id="resetData">Borrar todos mis datos</button>
+    </div>
+
+    <div class="section-title">Legal</div>
+    <div class="card">
+      <a href="privacy.html" target="_blank" rel="noopener" class="phase-summary" style="color:var(--brand-2); font-weight:600; text-decoration:none">📄 Política de privacidad</a>
     </div>
   `;
   $("#view").innerHTML = html;
