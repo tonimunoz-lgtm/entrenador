@@ -653,7 +653,10 @@ function renderOnboarding() {
         <button class="btn btn-primary" id="obSignUpBtn">Crear cuenta y empezar mi plan</button>
         <button class="btn btn-ghost" id="obSignInBtn">Ya tengo cuenta · Iniciar sesión</button>
       </div>
-      <p class="phase-summary" style="margin-top:12px; font-size:11.5px">Al crear una cuenta aceptas nuestra <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--brand-2); font-weight:600">política de privacidad</a> y nuestros <a href="terms.html" target="_blank" rel="noopener" style="color:var(--brand-2); font-weight:600">términos de uso</a> — léelos, especialmente el aviso sobre planes generados por IA.</p>
+      <label style="display:flex; align-items:flex-start; gap:8px; margin-top:14px; cursor:pointer">
+        <input type="checkbox" id="obAcceptTerms" style="margin-top:3px; width:16px; height:16px; accent-color:var(--brand); flex-shrink:0" />
+        <span class="phase-summary" style="font-size:11.5px; margin:0">He leído y acepto la <a href="privacy.html" target="_blank" rel="noopener" style="color:var(--brand-2); font-weight:600">política de privacidad</a> y los <a href="terms.html" target="_blank" rel="noopener" style="color:var(--brand-2); font-weight:600">términos de uso</a> — incluido el aviso sobre planes generados por IA.</span>
+      </label>
     </div>` : `
     <div class="card">
       <h4>Vamos a configurarlo</h4>
@@ -693,6 +696,7 @@ function renderOnboarding() {
     const email = $("#obAuthEmail").value.trim();
     const password = $("#obAuthPassword").value;
     if (!email || !password) { showToast("Escribe tu email y contraseña"); return; }
+    if (!$("#obAcceptTerms")?.checked) { showToast("Tienes que aceptar la política de privacidad y los términos de uso"); return; }
     const btn = $("#obSignUpBtn");
     btn.disabled = true;
     btn.textContent = "Creando tu cuenta…";
