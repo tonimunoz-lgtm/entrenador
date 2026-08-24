@@ -1647,12 +1647,14 @@ function renderAjustes() {
     <div class="card">
       <p class="phase-summary" style="margin-bottom:12px">${cloudUser ? "Tus datos se guardan en este dispositivo y en tu cuenta en la nube." : "Todos tus datos (peso, sesiones, checklist) se guardan solo en este dispositivo."}</p>
       <button class="btn btn-danger" id="resetData">${cloudUser ? "Borrar mi cuenta y todos mis datos" : "Borrar todos mis datos"}</button>
+      ${cloudUser ? `<a href="eliminar-cuenta.html" target="_blank" rel="noopener" class="phase-summary" style="display:block; margin-top:10px; color:var(--brand-2); font-weight:600; text-decoration:none; font-size:12px">Qué se borra exactamente →</a>` : ""}
     </div>
 
     <div class="section-title">Legal</div>
     <div class="card">
       <a href="privacy.html" target="_blank" rel="noopener" class="phase-summary" style="color:var(--brand-2); font-weight:600; text-decoration:none; display:block; margin-bottom:10px">📄 Política de privacidad</a>
-      <a href="terms.html" target="_blank" rel="noopener" class="phase-summary" style="color:var(--brand-2); font-weight:600; text-decoration:none; display:block">📋 Términos de uso</a>
+      <a href="terms.html" target="_blank" rel="noopener" class="phase-summary" style="color:var(--brand-2); font-weight:600; text-decoration:none; display:block; margin-bottom:10px">📋 Términos de uso</a>
+      <a href="eliminar-cuenta.html" target="_blank" rel="noopener" class="phase-summary" style="color:var(--brand-2); font-weight:600; text-decoration:none; display:block">🗑️ Cómo eliminar tu cuenta</a>
     </div>
   `;
   $("#view").innerHTML = html;
