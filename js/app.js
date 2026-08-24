@@ -48,7 +48,8 @@ const THEMES = [
   { id: "classic", name: "Clásico", desc: "El diseño actual de Forja21.", swatch: ["#3E7BFA", "#63E6D4", "#171D22"] },
   { id: "trackside", name: "Trackside", desc: "Energía de pista — negro y verde lima. Inspirado en Nike Training Club.", swatch: ["#D6FF3F", "#0A0A0A", "#141414"] },
   { id: "aura", name: "Aura", desc: "Calma premium con gradientes suaves. Inspirado en Whoop / Oura.", swatch: ["#31D6C4", "#A98CFF", "#0B0E17"] },
-  { id: "ledger", name: "Ledger", desc: "Modo claro, rápido y sin distracciones. Inspirado en Hevy / Strong.", swatch: ["#0F6B4C", "#FAFAF8", "#15181B"] }
+  { id: "ledger", name: "Ledger", desc: "Modo claro, rápido y sin distracciones. Inspirado en Hevy / Strong.", swatch: ["#0F6B4C", "#FAFAF8", "#15181B"] },
+  { id: "combustion", name: "Combustión", desc: "Naranja y blanco, alta energía. Inspirado en RunTrack.", swatch: ["#FF5A00", "#FFFFFF", "#16181B"] }
 ];
 
 function applyTheme(themeId) {
