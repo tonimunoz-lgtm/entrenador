@@ -360,6 +360,28 @@
       const m = pickContextualMessage();
       setMascotMessage(m.text, { pose: "pesao" }); // al tocarla, siempre la animación completa — más divertido
     });
+
+    // En móvil, position:fixed se ancla al viewport de LAYOUT, no al visual.
+    // Cuando el teclado aparece (sobre todo en Ajustes, con muchos <input>),
+    // ese layout viewport queda parcialmente tapado y la mascota "se sale"
+    // de lo que realmente se ve. La escondemos mientras haya un campo activo.
+    document.addEventListener("focusin", (e) => {
+      if (e.target.matches?.("input, textarea, select")) {
+        mascotEl.classList.add("kb-hidden");
+      }
+    });
+    document.addEventListener("focusout", (e) => {
+      if (e.target.matches?.("input, textarea, select")) {
+        // pequeño delay: si el foco salta de un input a otro (p.ej. tab
+        // entre campos de zonas), evita el parpadeo de mostrar/ocultar
+        setTimeout(() => {
+          if (!document.activeElement?.matches?.("input, textarea, select")) {
+            mascotEl.classList.remove("kb-hidden");
+          }
+        }, 80);
+      }
+    });
+
     startBlinking();
     startIdleGestures();
     startIdleHops();
@@ -781,7 +803,8 @@
     .gami-streak-chip b{ color: var(--z4); }
 
     /* Mascota */
-    .chispa-widget{ position: fixed; right: 16px; bottom: calc(78px + var(--safe-bottom)); z-index: 45; display:flex; flex-direction:column; align-items:flex-end; gap:8px; -webkit-tap-highlight-color: transparent; }
+    .chispa-widget{ position: fixed; right: 16px; bottom: calc(78px + var(--safe-bottom)); z-index: 45; display:flex; flex-direction:column; align-items:flex-end; gap:8px; -webkit-tap-highlight-color: transparent; transition: opacity .15s ease, transform .15s ease; }
+    .chispa-widget.kb-hidden{ opacity:0; transform: translateY(12px); pointer-events:none; }
     .chispa-avatar{
       width:64px; height:64px; border:none; background:transparent; padding:0; cursor:pointer;
       animation: chispaBounce 3.4s ease-in-out infinite;
