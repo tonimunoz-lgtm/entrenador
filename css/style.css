@@ -170,7 +170,7 @@
 [data-theme="combustion"] .hero .badge{ background: rgba(255,255,255,0.85); color: var(--brand-2); }
 
 *{ box-sizing: border-box; }
-html,body{ height:100%; }
+html,body{ height:100%; overflow-x:hidden; }
 body{
   margin:0;
   background: radial-gradient(ellipse 120% 60% at 50% -10%, var(--bg-glow) 0%, var(--bg) 55%);
@@ -178,6 +178,7 @@ body{
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+  width: 100%;
 }
 button{ font-family: inherit; }
 h1,h2,h3,h4{ font-family: var(--font-display); margin:0; letter-spacing: -0.01em; text-transform: var(--display-transform); }
@@ -186,10 +187,12 @@ p{ margin:0; }
 
 #app{
   max-width: 720px;
+  width: 100%;
   margin: 0 auto;
   min-height: 100vh;
   display:flex;
   flex-direction:column;
+  overflow-x: hidden;
 }
 
 /* ---------------- Topbar ---------------- */
@@ -506,12 +509,13 @@ p{ margin:0; }
   position:relative; text-align:left; appearance:none; cursor:pointer;
   background: var(--surface-3); border:1.5px solid var(--border); border-radius: var(--radius-md);
   padding:12px; display:flex; flex-direction:column; gap:6px; font-family: var(--font-body);
+  min-width: 0; /* sin esto, el grid no se encoge por debajo de la palabra más larga del texto y desborda */
 }
 .theme-option.active{ border-color: var(--brand); }
 .theme-swatch{ display:flex; gap:4px; }
 .theme-swatch i{ width:16px; height:16px; border-radius:50%; display:block; border:1px solid rgba(255,255,255,0.15); }
 .theme-name{ font-size:13px; font-weight:700; color: var(--text); }
-.theme-desc{ font-size:10.5px; color: var(--text-muted); line-height:1.4; }
+.theme-desc{ font-size:10.5px; color: var(--text-muted); line-height:1.4; overflow-wrap: break-word; }
 .theme-check{ position:absolute; top:10px; right:10px; width:18px; height:18px; border-radius:50%; background:var(--brand); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; }
 
 /* ---------------- Zone editor (Ajustes) ---------------- */
