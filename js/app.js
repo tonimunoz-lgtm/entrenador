@@ -1813,8 +1813,17 @@ function renderAjustes() {
     await CloudSync.signOutUser();
     if (typeof ForjaPlanRouter !== "undefined") ForjaPlanRouter.applyPlanRoute(null);
     else if (typeof applyPlanForEmail === "function") applyPlanForEmail(null);
-    showToast("Sesión cerrada — tus datos siguen en este dispositivo");
-    render();
+    // Este dispositivo puede usarlo otra persona a continuación (móvil compartido,
+    // o simplemente otro amigo probando la app). Si dejamos el estado local con
+    // onboarded:true, la próxima cuenta que se cree en este mismo navegador se
+    // llevaría por delante estos datos (ver handleCloudAuthChange). Lo borramos.
+    Object.values(STORE_KEYS).forEach(k => localStorage.removeItem(k));
+    state.settings = { ...PROFILE_DEFAULTS, onboarded: false };
+    state.weights = [];
+    state.workouts = [];
+    state.supps = {};
+    showToast("Sesión cerrada");
+    boot();
   });
 }
 
@@ -1998,13 +2007,29 @@ async function handleCloudAuthChange(user) {
   if (!user || cloudSyncInProgress) return;
   cloudSyncInProgress = true;
   try {
-    const route = typeof ForjaPlanRouter !== "undefined"
-      ? ForjaPlanRouter.applyPlanRoute(user)
-      : "legacy-toni";
+    // Si el router de planes no ha cargado, NO asumimos "legacy-toni": eso metía
+    // a cualquier cuenta nueva por el camino pensado solo para Toni y le hacía
+    // heredar sus valores por defecto (y, peor, podía subirle datos locales
+    // residuales del dispositivo). Ante la duda, reintentamos en vez de enrutar.
+    if (typeof ForjaPlanRouter === "undefined") {
+      cloudSyncInProgress = false;
+      setTimeout(() => handleCloudAuthChange(user), 300);
+      return;
+    }
+
+    const route = ForjaPlanRouter.applyPlanRoute(user);
 
     // Los usuarios nuevos NO heredan ni suben datos locales de Toni/Beizga.
     // Entrarán por su propio onboarding y su propio documento de plan.
     if (route === "personalized") {
+      boot();
+      return;
+    }
+
+    // A partir de aquí solo deben llegar Toni o Beizga (route === "legacy-toni"
+    // o "legacy-beizga"). Es un cinturón de seguridad extra por si el router
+    // cambiara en el futuro: nunca subir/heredar datos locales fuera de esos dos.
+    if (!ForjaPlanRouter.isLegacyPlanRoute()) {
       boot();
       return;
     }
