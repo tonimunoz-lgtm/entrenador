@@ -1851,6 +1851,38 @@ function render() {
   bindSuppHandlers();
   $$(".navbtn").forEach(b => b.classList.toggle("active", b.dataset.tab === state.activeTab));
   window.scrollTo(0, 0);
+  _debugCheckOverflow();
+}
+
+/* ---------------------------------------------------------------------
+   ⚠️ TEMPORAL — SOLO PARA DIAGNOSTICAR EL SCROLL LATERAL EN AJUSTES ⚠️
+   Después de cada render, comprueba si la página se ha vuelto más ancha
+   que la pantalla y, si es así, busca el elemento concreto responsable
+   y lo muestra en un toast (tab, tag, clase y píxeles de más).
+   Quitar esta función y la llamada de arriba en cuanto quede localizado.
+   --------------------------------------------------------------------- */
+function _debugCheckOverflow() {
+  try {
+    const vw = document.documentElement.clientWidth;
+    const docScrollW = document.documentElement.scrollWidth;
+    if (docScrollW <= vw + 1) return; // sin overflow en esta pestaña
+
+    let worst = null, worstRight = vw;
+    document.querySelectorAll("body *").forEach(el => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.right > worstRight + 1) {
+        worstRight = r.right;
+        worst = el;
+      }
+    });
+
+    const overBy = Math.round(docScrollW - vw);
+    const desc = worst
+      ? `<${worst.tagName.toLowerCase()}${worst.id ? "#" + worst.id : ""}${worst.className && typeof worst.className === "string" ? "." + worst.className.trim().replace(/\s+/g, ".") : ""}>`
+      : "(sin identificar)";
+    console.warn(`[FORJA21 DEBUG] Overflow en "${state.activeTab}": +${overBy}px — ${desc}`, worst);
+    showToast(`⚠️ [${state.activeTab}] +${overBy}px → ${desc}`);
+  } catch (e) { console.warn("[FORJA21 DEBUG] error", e); }
 }
 
 $$(".navbtn").forEach(btn => {
