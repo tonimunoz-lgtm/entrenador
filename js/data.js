@@ -3,14 +3,20 @@
    Extraído y estructurado a partir del manual del usuario.
    ========================================================================== */
 
+// ⚠️ Estos son solo valores neutros de arranque en frío (antes de iniciar sesión,
+// o si Firebase no está configurado). NUNCA deben ser datos reales de una persona
+// concreta: cualquier cuenta que por error caiga en la ruta legacy heredaría estos
+// valores tal cual, así que si contuvieran el objetivo/FC real de alguien, esa
+// persona se los vería "puestos" sin haberlos escrito. Los datos reales de Toni y
+// Beizga viven en sus propios documentos de Firestore, no aquí.
 let PROFILE_DEFAULTS = {
   name: "Atleta",
   startDate: "2026-08-24",          // Lunes de la semana 1 (editable en Ajustes). Las semanas van de lunes a domingo.
-  raceDate: "2027-01-24",           // Mitja Marató de Granollers
-  raceGoal: "Sub 1h 43min · 4:45–4:50 min/km",
-  startWeight: 87.5,
-  fcr: 46,                          // frecuencia cardiaca reposo
-  fcm: 160,                         // frecuencia cardiaca máxima
+  raceDate: "",                     // se rellena en Ajustes
+  raceGoal: "",                     // se rellena en Ajustes
+  startWeight: 75,
+  fcr: 60,                          // frecuencia cardiaca reposo — placeholder genérico
+  fcm: 180,                         // frecuencia cardiaca máxima — placeholder genérico
   z2max: 126,
   notificationsEnabled: false,
   theme: "combustion"
