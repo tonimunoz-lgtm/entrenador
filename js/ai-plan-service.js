@@ -951,6 +951,17 @@
         );
 
 
+    // Semana 1 primero (sirve de referencia narrativa para las demás).
+    // Semanas 2-4 en paralelo: su progresión numérica ya viene fijada por
+    // weeklyTargets (calculado localmente, sin IA), así que no necesitan
+    // esperarse entre sí para tener calidad — solo pierden el resumen
+    // textual de "la semana justo anterior" en favor de conocer solo la
+    // semana 1. Esto reduce la fase de semanas detalladas de ~4 llamadas
+    // en serie a ~2 (semana 1, luego el máximo de las 3 restantes en
+    // paralelo).
+
+    const pendingWeeks = [];
+
     for (
       let weekNumber =
         plan.firstBlock.weeks.length +
@@ -961,6 +972,11 @@
 
       weekNumber++
     ) {
+      pendingWeeks.push(weekNumber);
+    }
+
+
+    async function generateWeek(weekNumber) {
 
       emit(
         onProgress,
@@ -988,6 +1004,13 @@
                 week.week
               ) ===
               weekNumber - 1
+          ) ||
+        plan.firstBlock.weeks
+          .find(
+            week =>
+              number(
+                week.week
+              ) === 1
           );
 
 
@@ -1086,6 +1109,23 @@
             `✓ Semana ${weekNumber} creada y guardada`
         }
       );
+
+    }
+
+
+    if (pendingWeeks.length) {
+
+      // La primera semana pendiente va sola: da contexto a las siguientes.
+      await generateWeek(pendingWeeks[0]);
+
+      // El resto, en paralelo.
+      const rest = pendingWeeks.slice(1);
+
+      if (rest.length) {
+        await Promise.all(
+          rest.map(generateWeek)
+        );
+      }
 
     }
 
