@@ -17,6 +17,26 @@
   const DAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
   const PHASE_COLORS = ["#3E7BFA", "#22C55E", "#8B5CF6", "#FB923C", "#EC4899", "#06B6D4"];
 
+  // Mismo listado que GOALS en onboarding-personalized.js — se duplica aquí
+  // (en vez de compartir el array) porque ese archivo lo guarda dentro de su
+  // propio cierre de módulo y este adaptador no tiene forma de importarlo.
+  // Si añades/cambias un objetivo en el cuestionario, actualiza también esta
+  // tabla para que el texto siga siendo legible en vez de mostrar el id.
+  const GOAL_LABELS = {
+    race: "Preparar una carrera",
+    fat_loss: "Perder grasa / peso",
+    muscle: "Ganar masa muscular",
+    strength: "Ganar fuerza",
+    fitness: "Mantenerme en forma",
+    endurance: "Mejorar resistencia",
+    mobility: "Movilidad / bienestar",
+    other: "Objetivo personalizado"
+  };
+
+  function goalLabel(id) {
+    return GOAL_LABELS[id] || id || "Plan personalizado";
+  }
+
   let activePlan = null;
   let activeOnboarding = null;
 
@@ -329,7 +349,7 @@
       name: plan.athleteName || onboarding?.profile?.name || "Atleta",
       startDate: plan.startDate || PROFILE_DEFAULTS.startDate,
       raceDate: MILESTONES.find(m => m.icon === "🏁")?.date || null,
-      raceGoal: plan.primaryGoal || "",
+      raceGoal: goalLabel(plan.primaryGoal),
       startWeight: n(onboarding?.profile?.weightKg, PROFILE_DEFAULTS.startWeight),
       notificationsEnabled: false
     };
@@ -339,7 +359,7 @@
       welcomeDesc: () => plan.strategySummary || "",
       welcomeBadges: [`${TOTAL_PLAN_WEEKS} semanas`, `${PHASES.length} fases`],
       preplanDesc: startD => `Tu planificación personalizada empieza el ${startD}.`,
-      preplanBadges: () => [plan.primaryGoal || "Plan personalizado"],
+      preplanBadges: () => [goalLabel(plan.primaryGoal)],
       finishedTitle: "🏆 Has completado tu planificación",
       finishedDesc: (_startWeight, _currentWeight, totalWorkouts) =>
         `Has completado ${TOTAL_PLAN_WEEKS} semanas y registrado ${totalWorkouts} sesiones.`
