@@ -806,6 +806,14 @@ REGLAS:
 - Carrera: duración/distancia y ritmo, zona o RPE.
 - No inventes ritmos si faltan datos.
 - Nutrición y suplementos deben respetar exactamente el cuestionario.
+- Si profile.nutrition.mode="detailed": TODOS los días que no sean de
+  descanso puro deben incluir nutrition.meals con el desglose completo
+  (desayuno, comida/almuerzo, merienda, cena, y post-entreno si aplica),
+  cada una con su texto de ejemplo y kcalApprox. Nunca dejes meals=[] ni
+  sustituyas el desglose por un único resumen en nutrition.summary — eso
+  solo vale para profile.nutrition.mode="recommendations" o
+  "training_timing". Sé consistente: el nivel de detalle no puede variar
+  de un día a otro dentro de la misma semana.
 
 Si nutrition.mode="none":
 
@@ -1459,6 +1467,16 @@ module.exports =
         }
 
 
+        // Con nutrición "detailed" el JSON de la semana crece bastante (7
+        // días x desglose completo de comidas), así que le damos más margen
+        // de tokens para que no tenga que recortar el desglose por falta de
+        // espacio. Con cualquier otro nivel de nutrición, el presupuesto de
+        // siempre es de sobra.
+        const weekMaxTokens =
+          profile?.nutrition?.mode === "detailed"
+            ? 7200
+            : 6000;
+
         const rawWeek =
           await callModel(
 
@@ -1473,7 +1491,7 @@ module.exports =
               user.email
             ),
 
-            6000,
+            weekMaxTokens,
 
             MODEL_BULK
 
